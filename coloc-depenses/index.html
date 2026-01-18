@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mes colocations</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ===================== -->
+  <!-- EN-TÊTE -->
+  <!-- ===================== -->
+  <div class="card center">
+    <h1>🏠 Mes colocations</h1>
+    <button id="create-coloc-btn" class="primary">
+      ➕ Créer une colocation
+    </button>
+  </div>
+
+  <!-- ===================== -->
+  <!-- LISTE DES COLOCATIONS -->
+  <!-- ===================== -->
+  <div class="card">
+    <ul id="colocs-list"></ul>
+  </div>
+
+  <!-- ===================== -->
+  <!-- ÉDITEUR COLOCATION -->
+  <!-- ===================== -->
+  <div id="coloc-editor" class="card" style="display:none">
+
+    <h2 id="editor-title">➕ Nouvelle colocation</h2>
+
+    <!-- ===================== -->
+    <!-- NOM -->
+    <!-- ===================== -->
+    <label for="coloc-name-input">Nom de la colocation</label>
+    <input
+      type="text"
+      id="coloc-name-input"
+      placeholder="Nom de la colocation"
+    >
+
+    <hr>
+
+    <!-- ===================== -->
+    <!-- COLOCATAIRES -->
+    <!-- ===================== -->
+    <h3>👥 Colocataires</h3>
+
+    <ul id="users-list">
+      <li class="muted">Aucun colocataire</li>
+    </ul>
+
+    <input
+      type="text"
+      id="new-user-name"
+      placeholder="Nom du colocataire"
+    >
+
+    <button id="add-user-btn" class="primary">
+      + Ajouter un colocataire
+    </button>
+
+    <hr>
+
+    <!-- ===================== -->
+    <!-- ACTIONS BAS -->
+    <!-- ===================== -->
+    <div class="row">
+      <button id="save-coloc-btn" class="primary">
+        💾 Enregistrer
+      </button>
+
+      <button id="close-editor-btn" class="secondary">
+        ← Retour
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===================== -->
+<!-- SCRIPTS -->
+<!-- ===================== -->
+<script src="api.js"></script>
+<script src="index.js"></script>
+
+</body>
+</html>

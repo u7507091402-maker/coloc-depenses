@@ -1,0 +1,330 @@
+:root {
+  --bg: #f6f7f8;
+  --card: #ffffff;
+  --primary: #2ecc71;
+  --secondary: #3498db;
+  --danger: #e74c3c;
+  --text: #2c3e50;
+  --muted: #95a5a6;
+  --border: #e0e0e0;
+}
+
+/* =========================
+   GLOBAL
+   ========================= */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container {
+  max-width: 520px;
+  margin: auto;
+  padding: 16px;
+}
+
+.center {
+  text-align: center;
+}
+
+/* =========================
+   CARTES
+   ========================= */
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* =========================
+   TITRES
+   ========================= */
+h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* =========================
+   LISTES
+   ========================= */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+/* =========================
+   LISTE COLOCATIONS (MOBILE)
+   ========================= */
+.coloc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coloc-name {
+  flex: 1;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* bouton supprimer tactile */
+..delete-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 18px;
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--border);
+  }
+
+  .delete-btn:active {
+    background: var(--danger);
+    color: white;
+  }
+
+/* =========================
+   FORMULAIRES
+   ========================= */
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* =========================
+   BOUTONS
+   ========================= */
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.danger {
+  background: var(--danger);
+  color: white;
+}
+
+/* =========================
+   ALIGNEMENT
+   ========================= */
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row > * {
+  flex: 1;
+}
+
+/* =========================
+   DÉPENSES
+   ========================= */
+.expense-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.expense-meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.expense-actions {
+  margin-top: 8px;
+}
+
+.expense-actions button {
+  font-size: 12px;
+  padding: 6px 10px;
+  margin-right: 6px;
+}
+
+/* =========================
+   RÉGULARISATION
+   ========================= */
+.regul {
+  background: #f2f3f4;
+  border-radius: 10px;
+  padding: 10px;
+  font-style: italic;
+}
+
+/* =========================
+   LISTE DES DÉPENSES SCROLLABLE
+   ========================= */
+.expenses-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  padding: 6px 12px;
+}
+
+/* scrollbar discrète */
+.expenses-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.expenses-scroll::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+#expenses-list li {
+  padding: 10px 0;
+}
+/* =========================
+   Coloc list items
+   ========================= */
+
+.coloc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.coloc-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* =========================
+   Delete button (clean & mobile)
+   ========================= */
+
+.delete-coloc-btn {
+  background: var(--danger);
+  color: white;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.delete-coloc-btn:active {
+  transform: scale(0.95);
+}
+
+/* =========================
+   Editor bottom actions
+   ========================= */
+
+#coloc-editor .row {
+  margin-top: 16px;
+}
+/* =========================
+   Boutons liste coloc
+   ========================= */
+
+.coloc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.coloc-name {
+  flex: 1;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* bouton modifier */
+.edit-coloc-btn {
+  background: #ecf0f1;
+  color: #2c3e50;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* bouton supprimer */
+.delete-coloc-btn {
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* mini bouton suppression colocataire */
+.mini-delete {
+  margin-left: 10px;
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  padding: 0;
+}

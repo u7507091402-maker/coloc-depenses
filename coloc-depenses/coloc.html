@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Colocation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- STYLE GLOBAL -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- ===================== -->
+  <!-- EN-TÊTE -->
+  <!-- ===================== -->
+  <div class="card center">
+    <h1 id="coloc-title">Colocation</h1>
+
+    <div class="row">
+      <button id="budget-btn" class="secondary">📊 Voir le budget</button>
+      <button class="primary" onclick="location.href='index.html'">
+        ← Colocations
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== -->
+  <!-- COLOCATAIRES -->
+  <!-- ===================== -->
+  <div class="card">
+    <h2>Colocataires</h2>
+    <ul id="users-list"></ul>
+  </div>
+
+  <!-- ===================== -->
+  <!-- SOLDES -->
+  <!-- ===================== -->
+  <div class="card">
+    <h2>Soldes</h2>
+
+    <ul id="balances-list"></ul>
+
+    <button id="settle-btn" class="secondary">
+      ↺ Solder les écarts
+    </button>
+  </div>
+
+  <!-- ===================== -->
+  <!-- AJOUT DÉPENSE -->
+  <!-- ===================== -->
+  <div class="card">
+    <h2>Dépenses</h2>
+
+    <form id="expense-form">
+
+      <input
+        type="text"
+        id="expense-desc"
+        placeholder="Description"
+        required
+      >
+
+      <input
+        type="number"
+        id="expense-amount"
+        placeholder="Montant (€)"
+        step="0.01"
+        required
+      >
+
+      <select id="paid-by" required>
+        <option value="">— Qui a payé ? —</option>
+      </select>
+
+      <select id="expense-category" required>
+        <option value="">— Catégorie —</option>
+      </select>
+
+      <button type="submit" class="secondary">
+        + Ajouter la dépense
+      </button>
+
+    </form>
+  </div>
+
+  <!-- ===================== -->
+  <!-- LISTE DES DÉPENSES -->
+  <!-- ===================== -->
+  <div class="card">
+    <ul id="expenses-list"></ul>
+  </div>
+
+</div>
+
+<!-- SCRIPT -->
+<script src="api.js"></script>
+<script src="coloc.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Colocation</title>
+</head>
+<body>
+
+<h1 id="coloc-title"></h1>
+
+<h2>Colocataires</h2>
+<ul id="users-list"></ul>
+<input type="text" id="new-user-name" placeholder="Nom du colocataire">
+<button id="add-user-btn">Ajouter</button>
+
+<h2>Ajouter une dépense</h2>
+
+<form id="expense-form" onsubmit="return false;">
+  <input type="text" id="expense-desc" placeholder="Description" required>
+  <input type="number" id="expense-amount" placeholder="Montant" required>
+
+  <select id="paid-by"></select>
+
+  <button type="submit">Ajouter la dépense</button>
+</form>
+
+<h2>Dépenses</h2>
+<ul id="expenses-list"></ul>
+
+<script src="coloc.js"></script>
+
+</body>
+</html>

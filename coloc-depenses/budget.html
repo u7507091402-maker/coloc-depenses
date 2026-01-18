@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Budget</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="card">
+    <h1>📊 Budget</h1>
+    <button id="back-btn" class="secondary" style="width:100%">
+      ← Retour à la colocation
+    </button>
+  </div>
+
+  <div class="card">
+    <h2>Période</h2>
+
+    <select id="period-select">
+      <option value="month">📅 Mois en cours</option>
+      <option value="year">📆 Année en cours</option>
+      <option value="custom">🗓️ Période personnalisée</option>
+    </select>
+
+    <input type="date" id="date-from" style="display:none">
+    <input type="date" id="date-to" style="display:none">
+  </div>
+
+  <div class="card">
+    <h2>Total</h2>
+    <p id="total-budget">0 €</p>
+  </div>
+
+  <div class="card">
+    <h2>Dépenses</h2>
+    <ul id="expenses-list" style="max-height:300px; overflow-y:auto;"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Répartition</h2>
+    <canvas id="category-chart"></canvas>
+  </div>
+
+</div>
+
+<!-- ORDRE IMPORTANT -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="api.js"></script>
+<script src="budget.js"></script>
+
+</body>
+</html>
