@@ -1,140 +1,326 @@
-/* ===== BASE ===== */
-body {
+/* =========================
+   BASE
+========================= */
+:root{
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --text: #222;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+
+  --primary: #00c46a;
+  --primary-hover: #00b15f;
+
+  --shadow: 0 6px 18px rgba(0,0,0,0.06);
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 16px;
+  --space-5: 22px;
+
+  --container: 520px;
+}
+
+*{ box-sizing: border-box; }
+
+body{
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f4f6f8;
-  color: #222;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
 }
 
-.container {
-  max-width: 480px;
-  margin: auto;
-  padding: 16px;
+/* =========================
+   LAYOUT
+========================= */
+.container{
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-4);
 }
 
-/* ===== CARDS ===== */
-.card {
-  background: white;
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+/* =========================
+   CARDS
+========================= */
+.card{
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0,0,0,0.02);
 }
 
-.center { text-align: center; }
+.center{ text-align: center; }
 
-/* ===== TITRES ===== */
-h1 { font-size: 1.5rem; margin-bottom: 10px; }
-h2 { font-size: 1.2rem; margin-bottom: 10px; }
-h3 { font-size: 1rem; color: #777; margin-bottom: 5px; }
+/* =========================
+   TYPO
+========================= */
+h1, h2, h3{
+  margin: 0 0 var(--space-2);
+}
 
-/* ===== BOUTONS ===== */
-button {
-  border: none;
-  border-radius: 999px;
-  padding: 10px 16px;
+h1{
+  font-size: 1.55rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+h2{
+  font-size: 1.15rem;
+  line-height: 1.2;
+  font-weight: 650;
+}
+
+h3{
   font-size: 0.95rem;
-  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+p{ margin: 0 0 var(--space-2); }
+
+.muted{
+  color: var(--muted);
+  text-align: center;
+  padding: var(--space-3) 0;
+}
+
+/* =========================
+   BRAND TITLE (H1 + LOGO)
+========================= */
+./* ===== BRAND (anti-moche) ===== */
+.brand{
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  margin: 0 0 14px;
+  line-height: 1;
 }
 
-.primary { background: #00c46a; color: white; }
-.secondary { background: #e6e9ed; color: #333; }
-.primary:hover { background: #00b15f; }
-
-/* ===== INPUT ===== */
-input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  font-size: 1rem;
-  margin-bottom: 10px;
-  box-sizing: border-box;
+/* centrer si parent .center */
+.center .brand{
+  justify-content: center;
 }
 
-/* ===== LISTES ===== */
-ul { list-style: none; padding: 0; margin: 0; }
+.brand__logo{
+  width: 44px;          /* taille stable et lisible */
+  height: 44px;
+  border-radius: 12px;  /* look app icon */
+  object-fit: cover;    /* évite la déformation */
+  flex: 0 0 auto;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
 
-li {
-  padding: 10px 8px;
-  border-bottom: 1px solid #eee;
+.brand__text{
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
-li:last-child { border-bottom: none; }
-
-.muted { color: #999; text-align: center; padding: 10px; }
-
-.coloc-item { display: flex; justify-content: space-between; align-items: center; }
-.coloc-name { font-weight: 600; }
-
-/* ===== ROW ===== */
-.row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: space-between;
+.center .brand__text{
+  align-items: flex-start; /* le logo sert d’ancre, plus joli */
 }
 
-/* ===== ICONES ===== */
-svg { width: 18px; height: 18px; }
-
-/* ===== RESPONSIVE MOBILE ===== */
-@media screen and (max-width: 500px) {
-  input { font-size: 0.9rem; padding: 8px; }
-  button { font-size: 0.9rem; padding: 8px 12px; }
-  .row { flex-direction: column; gap: 6px; }
-}
-/* ========== ERGONOMIE COLOC ========== */
-
-/* Colocataires = info secondaire */
-.small h3 {
-  font-size: 0.9rem;
-  opacity: 0.7;
+.brand__name{
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 
-.small-text li {
-  font-size: 0.85rem;
-  opacity: 0.8;
+.brand__tagline{
+  font-size: 0.95rem;
+  color: #6b7280;
+  font-weight: 600;
+  line-height: 1.15;
 }
 
-/* Mettre les soldes en avant */
-.highlight {
-  border: 2px solid #4CAF50;
-  background: #f3fff6;
-  
-}
+/* =========================
+   BUTTONS
+========================= */
+button{
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 11px 16px;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
 
-/* ===== ICON BUTTON (edit/delete) ===== */
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 999px;
-  background: #f1f3f5;
-  color: #333;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+
+  background: #e6e9ed;
+  color: #111;
+  transition: transform 0.04s ease, background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+button:active{
+  transform: translateY(1px);
+}
+
+button:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primary{
+  background: var(--primary);
+  color: white;
+}
+
+.primary:hover{
+  background: var(--primary-hover);
+}
+
+.secondary{
+  background: #eef1f4;
+  color: #111;
+  border-color: #e8ebef;
+}
+
+.secondary:hover{
+  background: #e6e9ed;
+}
+
+/* =========================
+   INPUTS
+========================= */
+input{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 1rem;
+  outline: none;
+  margin-bottom: var(--space-2);
+}
+
+input:focus{
+  border-color: rgba(0,196,106,0.55);
+  box-shadow: 0 0 0 3px rgba(0,196,106,0.12);
+}
+
+/* =========================
+   LISTS
+========================= */
+ul{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li{
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+li:last-child{
+  border-bottom: none;
+}
+
+.coloc-item{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.coloc-name{
+  font-weight: 700;
+}
+
+/* =========================
+   ROW / GRID
+========================= */
+.row{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* =========================
+   ICONS
+========================= */
+svg{
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================
+   ERGONOMIE COLOC
+========================= */
+.small h3{
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.small-text li{
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Mettre les soldes en avant */
+.highlight{
+  border: 2px solid rgba(0,196,106,0.55);
+  background: #f3fff6;
+}
+
+/* =========================
+   ICON BUTTON (edit/delete)
+========================= */
+.icon-btn{
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  background: #f1f3f5;
+  color: #111;
+  border: 1px solid rgba(0,0,0,0.06);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   flex: 0 0 auto;
 }
 
-.icon-btn:hover { background: #e6e9ed; }
+.icon-btn:hover{
+  background: #e6e9ed;
+}
 
-/* Variante destructive (poubelle) */
-.icon-btn.danger {
+.icon-btn.danger{
   background: #ffecec;
+  border-color: rgba(180,35,24,0.18);
   color: #b42318;
 }
-.icon-btn.danger:hover { background: #ffd7d7; }
 
-/* Ligne dépense plus "Tricount" */
-.expense-row {
+.icon-btn.danger:hover{
+  background: #ffd7d7;
+}
+
+/* =========================
+   DEPENSES (style Tricount)
+========================= */
+.expense-row{
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -142,23 +328,86 @@ svg { width: 18px; height: 18px; }
   width: 100%;
 }
 
-.expense-main {
+.expense-main{
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.expense-title {
-  font-weight: 700;
+.expense-title{
+  font-weight: 800;
+  line-height: 1.2;
 }
 
-.expense-meta {
-  font-size: 0.85rem;
-  color: #666;
+.expense-meta{
+  font-size: 0.88rem;
+  color: var(--muted);
   margin-top: 4px;
   line-height: 1.25;
 }
 
-.expense-amount {
-  font-weight: 700;
+.expense-amount{
+  font-weight: 800;
   white-space: nowrap;
+}
+
+/* =========================
+   RESPONSIVE MOBILE
+========================= */
+@media screen and (max-width: 500px){
+  .container{
+    padding: 14px;
+  }
+
+  h1{
+    font-size: 1.4rem;
+  }
+
+  button{
+    font-size: 0.92rem;
+    padding: 10px 14px;
+  }
+
+  input{
+    font-size: 0.95rem;
+    padding: 10px 11px;
+  }
+
+  .row{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+}
+/* ===== BRAND HEADER ===== */
+.brand{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  width: 100%;
+}
+
+.brand__text{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.brand__logo{
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.brand__name{
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.brand__tagline{
+  font-size: 0.95rem;
+  color: #6b7280;
 }

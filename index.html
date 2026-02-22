@@ -2,28 +2,47 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Mes colocations</title>
+  <title>Splitly</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- CSS Tricount mobile -->
+  <!-- Couleur navigateur mobile -->
+  <meta name="theme-color" content="#00c46a">
+
+  <!-- Icône iPhone écran d’accueil -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-512.png">
+
+  <!-- Favicon navigateur -->
+  <link rel="icon" type="image/png" sizes="32x32" href="icon-512.png">
+
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Icônes modernes Lucide -->
+  <!-- Icônes Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Supabase UMD classique (stable) -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
 </head>
+
 <body>
 
 <div class="container">
 
   <!-- EN-TÊTE -->
   <div class="card center">
-    <h1>🏠 Mes colocations</h1>
+
+    <h1 class="brand">
+      <img src="icon-512.png" alt="Splitly" class="brand__logo">
+      <span class="brand__text">
+        <span class="brand__name">Splitly</span>
+        <span class="brand__tagline">simplifie vos dépenses</span>
+      </span>
+    </h1>
+
     <button id="create-coloc-btn" class="primary">
       <i data-lucide="plus"></i> Créer une colocation
     </button>
+
   </div>
 
   <!-- LISTE DES COLOCATIONS -->
@@ -76,12 +95,11 @@
 
 </div>
 
-<!-- Scripts inchangés -->
+<!-- Scripts -->
 <script src="api.js"></script>
 <script src="index.js"></script>
 
 <script>
-  // Active les icônes Lucide
   lucide.createIcons();
 </script>
 
