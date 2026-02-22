@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Colocation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS Tricount mobile -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Icônes modernes Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase UMD classique (stable) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- EN-TÊTE STYLE TRICOUNT -->
+    <div class="card row between center">
+      <button id="back-btn" class="secondary">
+        <i data-lucide="arrow-left"></i>
+        Retour
+      </button>
+
+      <h1>🏠 Colocation</h1>
+
+      <div style="width:80px"></div>
+    </div>
+     
+     <!-- COLOCATAIRES (INFO) -->
+     <div class="card small">
+       <h3><i data-lucide="users"></i> Colocataires</h3>
+       <ul id="users-list" class="small-text">
+         <li class="muted">Aucun colocataire</li>
+       </ul>
+     </div>
+
+     <!-- SOLDES (PRIORITÉ) -->
+     <div class="card highlight">
+       <h2><i data-lucide="balance-scale"></i> Soldes</h2>
+       <ul id="balances-list">
+         <li class="muted">Aucun solde</li>
+       </ul>
+     </div>
+
+     <!-- ACTIONS -->
+     <div class="card row">
+       <button id="settle-btn" class="secondary">
+         <i data-lucide="refresh-ccw"></i> Régulariser
+       </button>
+       <button id="budget-btn" class="primary">
+         <i data-lucide="bar-chart-2"></i> Voir budget
+       </button>
+     </div>
+
+     <!-- FORMULAIRE -->
+     <div class="card">
+       <h2><i data-lucide="plus"></i> Nouvelle dépense</h2>
+       <form id="expense-form" class="column">
+         <input type="text" id="expense-desc" placeholder="Description">
+         <input type="number" id="expense-amount" placeholder="Montant" step="0.01">
+         <select id="paid-by"></select>
+         <select id="expense-category"></select>
+         <button type="submit" class="primary">
+           <i data-lucide="save"></i> Ajouter
+         </button>
+       </form>
+     </div>
+
+   
+
+     <!-- DÉPENSES (EN DERNIER) -->
+     <div class="card">
+       <h2><i data-lucide="credit-card"></i> Dépenses</h2>
+       <ul id="expenses-list">
+         <li class="muted">Aucune dépense</li>
+       </ul>
+     </div>
+
+   </div>
+  
+
+  
+  
+
+<!-- Supabase depuis CDN (UMD stable) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
+
+<!-- Lucide -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- API et JS -->
+<script src="api.js"></script>
+<script src="coloc.js"></script>
+
+<!-- Active Lucide -->
+<script>
+  lucide.createIcons();
+</script>
+
+
+</body>
+</html>

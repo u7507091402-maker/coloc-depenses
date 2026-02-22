@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Budget</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS du projet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Icônes Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase UMD (stable) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
+
+  <!-- Chart.js (si ton budget.js l'utilise déjà) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="card row" style="justify-content: space-between; align-items:center;">
+      <button id="back-btn" class="secondary" style="gap:8px; display:flex; align-items:center;">
+        <i data-lucide="arrow-left"></i>
+        Retour
+      </button>
+
+      <div style="text-align:right;">
+        <div class="muted" style="font-size:0.9rem;">Budget</div>
+        <div id="coloc-title" style="font-weight:700;">Colocation</div>
+      </div>
+    </div>
+
+    <!-- TOTAL -->
+    <div class="card highlight">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div>
+          <div class="muted" style="font-size:0.9rem;">Total des dépenses</div>
+          <div id="total-budget" style="font-size:1.6rem; font-weight:800;">0.00 €</div>
+        </div>
+        <i data-lucide="wallet" style="opacity:0.8;"></i>
+      </div>
+    </div>
+
+    <!-- FILTRES -->
+    <div class="card">
+      <h2 style="display:flex; gap:10px; align-items:center;">
+        <i data-lucide="sliders"></i> Période
+      </h2>
+
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <select id="period-select" style="flex:1; min-width:180px;">
+          <option value="month">Ce mois</option>
+          <option value="year">Cette année</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+
+        <input id="date-from" type="date" style="flex:1; min-width:150px; display:none;" />
+        <input id="date-to" type="date" style="flex:1; min-width:150px; display:none;" />
+      </div>
+
+      <p class="muted" style="margin-top:10px; font-size:0.9rem;">
+        Choisis une période pour analyser tes dépenses par catégorie.
+      </p>
+    </div>
+
+    <!-- GRAPH -->
+    <div class="card">
+      <h2 style="display:flex; gap:10px; align-items:center;">
+        <i data-lucide="pie-chart"></i> Répartition par catégorie
+      </h2>
+
+      <div style="width:100%; max-width:520px; margin: 0 auto;">
+        <canvas id="category-chart"></canvas>
+      </div>
+
+      <p class="muted" style="margin-top:10px; font-size:0.9rem;">
+        Le graphique se met à jour automatiquement selon la période.
+      </p>
+    </div>
+
+    <!-- LISTE DEPENSES -->
+    <div class="card">
+      <h2 style="display:flex; gap:10px; align-items:center;">
+        <i data-lucide="list"></i> Dépenses (période sélectionnée)
+      </h2>
+
+      <ul id="expenses-list">
+        <li class="muted">Aucune dépense</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Scripts projet -->
+  <script src="api.js"></script>
+  <script src="budget.js"></script>
+
+  <!-- Active Lucide -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
