@@ -62,9 +62,7 @@ body{
 /* =========================
    TYPO
 ========================= */
-h1, h2, h3{
-  margin: 0 0 var(--space-2);
-}
+h1, h2, h3{ margin: 0 0 var(--space-2); }
 
 h1{
   font-size: 1.55rem;
@@ -94,27 +92,39 @@ p{ margin: 0 0 var(--space-2); }
 }
 
 /* =========================
-   BRAND TITLE (H1 + LOGO)
+   HEADER SPLITLY (COMMUN)
 ========================= */
-./* ===== BRAND (anti-moche) ===== */
+.header{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Ligne d’actions (ex: Retour) sous le brand */
+.header-actions{
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* =========================
+   BRAND (logo + Splitly + tagline)
+========================= */
 .brand{
+  margin: 0;
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 14px;
-  line-height: 1;
 }
 
-/* centrer si parent .center */
-.center .brand{
-  justify-content: center;
-}
+.center .brand{ justify-content: center; }
 
 .brand__logo{
-  width: 44px;          /* taille stable et lisible */
+  width: 44px;
   height: 44px;
-  border-radius: 12px;  /* look app icon */
-  object-fit: cover;    /* évite la déformation */
+  border-radius: 12px;
+  object-fit: cover;
   flex: 0 0 auto;
   box-shadow: 0 6px 18px rgba(0,0,0,0.10);
 }
@@ -124,10 +134,7 @@ p{ margin: 0 0 var(--space-2); }
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-}
-
-.center .brand__text{
-  align-items: flex-start; /* le logo sert d’ancre, plus joli */
+  line-height: 1.05;
 }
 
 .brand__name{
@@ -139,7 +146,7 @@ p{ margin: 0 0 var(--space-2); }
 
 .brand__tagline{
   font-size: 0.95rem;
-  color: #6b7280;
+  color: var(--muted);
   font-weight: 600;
   line-height: 1.15;
 }
@@ -165,9 +172,7 @@ button{
   transition: transform 0.04s ease, background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
-button:active{
-  transform: translateY(1px);
-}
+button:active{ transform: translateY(1px); }
 
 button:disabled{
   opacity: 0.6;
@@ -179,9 +184,7 @@ button:disabled{
   color: white;
 }
 
-.primary:hover{
-  background: var(--primary-hover);
-}
+.primary:hover{ background: var(--primary-hover); }
 
 .secondary{
   background: #eef1f4;
@@ -189,14 +192,20 @@ button:disabled{
   border-color: #e8ebef;
 }
 
-.secondary:hover{
-  background: #e6e9ed;
+.secondary:hover{ background: #e6e9ed; }
+
+/* Petit bouton (Retour) */
+.btn-compact{
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  border-radius: var(--radius-pill);
+  gap: 6px;
 }
 
 /* =========================
    INPUTS
 ========================= */
-input{
+input, select{
   width: 100%;
   padding: 11px 12px;
   border-radius: var(--radius-md);
@@ -207,7 +216,7 @@ input{
   margin-bottom: var(--space-2);
 }
 
-input:focus{
+input:focus, select:focus{
   border-color: rgba(0,196,106,0.55);
   box-shadow: 0 0 0 3px rgba(0,196,106,0.12);
 }
@@ -230,9 +239,7 @@ li{
   gap: 10px;
 }
 
-li:last-child{
-  border-bottom: none;
-}
+li:last-child{ border-bottom: none; }
 
 .coloc-item{
   display: flex;
@@ -242,9 +249,7 @@ li:last-child{
   width: 100%;
 }
 
-.coloc-name{
-  font-weight: 700;
-}
+.coloc-name{ font-weight: 700; }
 
 /* =========================
    ROW / GRID
@@ -256,6 +261,9 @@ li:last-child{
   justify-content: space-between;
   align-items: center;
 }
+
+/* si tu utilises .between */
+.between{ justify-content: space-between; }
 
 /* =========================
    ICONS
@@ -303,9 +311,7 @@ svg{
   flex: 0 0 auto;
 }
 
-.icon-btn:hover{
-  background: #e6e9ed;
-}
+.icon-btn:hover{ background: #e6e9ed; }
 
 .icon-btn.danger{
   background: #ffecec;
@@ -313,9 +319,7 @@ svg{
   color: #b42318;
 }
 
-.icon-btn.danger:hover{
-  background: #ffd7d7;
-}
+.icon-btn.danger:hover{ background: #ffd7d7; }
 
 /* =========================
    DEPENSES (style Tricount)
@@ -354,20 +358,21 @@ svg{
    RESPONSIVE MOBILE
 ========================= */
 @media screen and (max-width: 500px){
-  .container{
-    padding: 14px;
-  }
+  .container{ padding: 14px; }
 
-  h1{
-    font-size: 1.4rem;
-  }
+  h1{ font-size: 1.4rem; }
 
   button{
     font-size: 0.92rem;
     padding: 10px 14px;
   }
 
-  input{
+  .btn-compact{
+    font-size: 0.85rem;
+    padding: 7px 12px;
+  }
+
+  input, select{
     font-size: 0.95rem;
     padding: 10px 11px;
   }
@@ -377,83 +382,4 @@ svg{
     align-items: stretch;
     gap: 8px;
   }
-}
-/* ===== BRAND HEADER ===== */
-.brand{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 0 0 14px;
-  width: 100%;
-}
-
-.brand__text{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.brand__logo{
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  object-fit: cover;
-}
-
-.brand__name{
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.brand__tagline{
-  font-size: 0.95rem;
-  color: #6b7280;
-}
-/* ===== BRAND ===== */
-.brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.brand__logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-}
-
-.brand__text {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.brand__name {
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.brand__tagline {
-  font-size: 0.8rem;
-  color: #777;
-}
-
-/* ===== SMALL BACK BUTTON ===== */
-.back-btn {
-  background: transparent;
-  color: #666;
-  font-size: 0.85rem;
-  padding: 6px 10px;
-  border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.back-btn:hover {
-  background: #f0f0f0;
 }
