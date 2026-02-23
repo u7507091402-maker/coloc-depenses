@@ -2,13 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <h1 class="brand">
-    <img src="icon-512.png" alt="Splitly" class="brand__logo">
-    <span class="brand__text">
-      <span class="brand__name">Splitly</span>
-      <span class="brand__tagline">simplifie vos dépenses</span>
-    </span>
-  </h1>
+  <title>Splitly — Budget</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- CSS du projet -->
@@ -20,37 +14,32 @@
   <!-- Supabase UMD (stable) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
 
-  <!-- Chart.js (si ton budget.js l'utilise déjà) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
   <div class="container">
 
-      <!-- HEADER SPLITLY -->
-      <!-- HEADER SPLITLY -->
-      <div class="card">
-
-        <!-- Ligne logo + titre -->
-        <div class="center">
-          <h1 class="brand">
-            <img src="icon-512.png" alt="Splitly" class="brand__logo">
-            <span class="brand__text">
-              <span class="brand__name">Splitly</span>
-              <span class="brand__tagline">simplifie vos dépenses</span>
-            </span>
-          </h1>
-        </div>
-
-        <!-- Bouton retour sous le titre -->
-        <div style="margin-top:12px;">
-          <button id="back-btn" class="back-btn">
-            <i data-lucide="arrow-left"></i>
-            Retour
-          </button>
-        </div>
-
+    <!-- HEADER SPLITLY -->
+    <div class="card">
+      <div class="center">
+        <h1 class="brand">
+          <img src="icon-512.png" alt="Splitly" class="brand__logo">
+          <span class="brand__text">
+            <span class="brand__name">Splitly</span>
+            <span class="brand__tagline">simplifie vos dépenses</span>
+          </span>
+        </h1>
       </div>
+
+      <div style="margin-top:12px;">
+        <button id="back-btn" class="back-btn">
+          <i data-lucide="arrow-left"></i>
+          Retour
+        </button>
+      </div>
+    </div>
 
     <!-- TOTAL -->
     <div class="card highlight">
@@ -117,7 +106,6 @@
   <script src="api.js"></script>
   <script src="budget.js"></script>
 
-  <!-- Active Lucide -->
   <script>
     lucide.createIcons();
   </script>
