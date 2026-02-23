@@ -19,8 +19,17 @@
 </head>
 
 <body>
-  <div class="container">
 
+  <script>
+    // Redirige vers index si l'app est ouverte directement
+    if (!document.referrer || !document.referrer.includes(window.location.host)) {
+      if (!window.location.pathname.endsWith("index.html")) {
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+
+  <div class="container">
     <!-- HEADER SPLITLY -->
     <div class="card">
       <div class="center">
