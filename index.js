@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // =======================
-  // INIT SUPABASE
+  // INIT SUPABASE (v1 UMD)
   // =======================
   const SUPABASE_URL = "https://vzsqxtkxzzzqxiyglnlb.supabase.co";
   const SUPABASE_KEY = "sb_publishable_dKJ32JikaTFXd5OBwRpBrw__J7HeB2M";
@@ -21,12 +21,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logoutBtn = document.getElementById("logout-btn");
 
   // =======================
-  // CHECK SESSION
+  // CHECK SESSION (v1)
   // =======================
-  const { data: sessionData, error: sessErr } = await supabaseClient.auth.getSession();
-  if (sessErr) console.warn("⚠️ getSession error:", sessErr);
-
-  const session = sessionData?.session || null;
+  const session = supabaseClient.auth.session();
 
   // NOT CONNECTED => show login, hide app
   if (!session) {
@@ -40,16 +37,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (loginMessage) loginMessage.textContent = "Envoi du lien…";
 
-        // Redirige vers ton index GitHub Pages (ou localhost en dev)
-        // -> préfère toujours index.html pour éviter les surprises.
-        const redirectTo = `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, "/index.html")}`;
+        // Toujours revenir sur index.html
+        const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
+        const redirectTo = `${window.location.origin}${basePath}index.html`;
 
-        const { error } = await supabaseClient.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: redirectTo
-          }
-        });
+        // ✅ Supabase v1 magic link
+        const { error } = await supabaseClient.auth.signIn(
+          { email },
+          { redirectTo }
+        );
 
         if (error) {
           if (loginMessage) loginMessage.textContent = "Erreur : " + error.message;
@@ -67,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (loginCard) loginCard.style.display = "none";
   if (app) app.style.display = "block";
 
-  // logout
+  // logout (v1)
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
       await supabaseClient.auth.signOut();
@@ -298,5 +294,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadData();
   if (window.lucide) lucide.createIcons();
 
-  console.log("✅ index.js OK — login + app + claim invites + CRUD");
+  console.log("✅ index.js OK — v1 auth + app + claim invites + CRUD");
 });
