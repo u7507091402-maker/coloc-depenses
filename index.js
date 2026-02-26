@@ -1,15 +1,32 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // =======================
-  // INIT SUPABASE
+  // INIT SUPABASE (UMD v1.35.7)
   // =======================
   const SUPABASE_URL = "https://vzsqxtkxzzzqxiyglnlb.supabase.co";
   const SUPABASE_KEY = "sb_publishable_dKJ32JikaTFXd5OBwRpBrw__J7HeB2M";
-
-  // IMPORTANT: sur tes pages tu as chargé supabase.min.js (UMD)
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // init API (api.js)
+  // api.js
   initApi(supabaseClient);
+
+  // =======================
+  // ANTI-BOUCLE iOS (magic link)
+  // =======================
+  // Quand on revient du mail, l'URL peut contenir #access_token=...
+  // On reload UNE SEULE FOIS pour laisser Supabase écrire la session, puis on nettoie l'URL.
+  try {
+    const href = window.location.href;
+    const hasAuthHash = href.includes("#access_token=") || href.includes("type=magiclink");
+
+    if (hasAuthHash && !sessionStorage.getItem("splitly_auth_refreshed")) {
+      sessionStorage.setItem("splitly_auth_refreshed", "1");
+      history.replaceState({}, document.title, "index.html"); // nettoie l'URL
+      window.location.reload();
+      return; // stop
+    }
+  } catch (e) {
+    console.warn("anti-loop warning:", e);
+  }
 
   // =======================
   // LOGIN/UI ELEMENTS
@@ -23,92 +40,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logoutBtn = document.getElementById("logout-btn");
 
   // =======================
-  // HELPERS AUTH COMPAT (v1 + v2)
+  // HELPERS
   // =======================
-  async function getSessionCompat() {
-    // v2: auth.getSession()
-    if (supabaseClient.auth?.getSession) {
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) throw error;
-      return data?.session || null;
-    }
-    // v1: auth.session()
-    if (supabaseClient.auth?.session) {
-      return supabaseClient.auth.session() || null;
-    }
-    throw new Error("Auth API inconnue: ni getSession() ni session()");
-  }
-
-  async function sendMagicLinkCompat(email, redirectTo) {
-    // v2: signInWithOtp
-    if (supabaseClient.auth?.signInWithOtp) {
-      const { error } = await supabaseClient.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirectTo },
-      });
-      if (error) throw error;
-      return;
-    }
-    // v1: signIn
-    if (supabaseClient.auth?.signIn) {
-      const { error } = await supabaseClient.auth.signIn(
-        { email },
-        { redirectTo }
-      );
-      if (error) throw error;
-      return;
-    }
-    throw new Error("Auth API inconnue: ni signInWithOtp() ni signIn()");
-  }
-
-  async function signOutCompat() {
-    if (supabaseClient.auth?.signOut) {
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) throw error;
-      return;
-    }
-    throw new Error("Auth API inconnue: ni signOut()");
-  }
-
   function getRedirectToIndex() {
-    // Force retour sur index.html (super important sur GitHub Pages)
     const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
     return `${window.location.origin}${basePath}index.html`;
   }
 
-  // =======================
-  // AUTH EVENT (v1 + v2)
-  // =======================
-  // Quand l'utilisateur clique le magic link, parfois iOS met un peu de temps.
-  // On force l'app à revenir sur index après SIGNED_IN.
-  try {
-    if (supabaseClient.auth?.onAuthStateChange) {
-      supabaseClient.auth.onAuthStateChange((event) => {
-        if (event === "SIGNED_IN") {
-          // revient proprement sur index (standalone)
-          location.href = "index.html";
-        }
-      });
-    }
-  } catch (e) {
-    console.warn("onAuthStateChange warning:", e);
+  function showLogin() {
+    if (loginCard) loginCard.style.display = "block";
+    if (app) app.style.display = "none";
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function showApp() {
+    if (loginCard) loginCard.style.display = "none";
+    if (app) app.style.display = "block";
+    if (window.lucide) lucide.createIcons();
   }
 
   // =======================
-  // CHECK SESSION
+  // CHECK SESSION (v1)
   // =======================
   let session = null;
   try {
-    session = await getSessionCompat();
+    session = supabaseClient.auth.session();
   } catch (e) {
-    console.warn("⚠️ Session read failed:", e);
+    console.warn("session() failed:", e);
     session = null;
   }
 
-  // NOT CONNECTED => login visible / app cachée
+  // ✅ si on est connecté, on peut reset le flag anti-boucle
+  if (session) {
+    sessionStorage.removeItem("splitly_auth_refreshed");
+  }
+
+  // =======================
+  // NOT CONNECTED => LOGIN
+  // =======================
   if (!session) {
-    if (loginCard) loginCard.style.display = "block";
-    if (app) app.style.display = "none";
+    showLogin();
 
     if (loginBtn) {
       loginBtn.onclick = async () => {
@@ -118,7 +89,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (loginMessage) loginMessage.textContent = "Envoi du lien…";
 
         try {
-          await sendMagicLinkCompat(email, getRedirectToIndex());
+          const redirectTo = getRedirectToIndex();
+
+          // Supabase v1 magic link:
+          // https://supabase.com/docs/reference/javascript/auth-signin (v1)
+          const { error } = await supabaseClient.auth.signIn({ email }, { redirectTo });
+          if (error) throw error;
+
           if (loginMessage) loginMessage.textContent = "📩 Vérifie tes emails (lien magique) !";
         } catch (err) {
           console.error("Magic link error:", err);
@@ -127,18 +104,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
     }
 
-    if (window.lucide) lucide.createIcons();
-    return;
+    return; // stop si pas connecté
   }
 
-  // CONNECTED => login caché / app visible
-  if (loginCard) loginCard.style.display = "none";
-  if (app) app.style.display = "block";
+  // =======================
+  // CONNECTED => APP
+  // =======================
+  showApp();
+  console.log("✅ Connecté :", session.user?.email);
 
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
       try {
-        await signOutCompat();
+        await supabaseClient.auth.signOut();
       } catch (e) {
         console.warn("logout warn:", e);
       }
@@ -146,10 +124,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
-  console.log("✅ Connecté :", session.user?.email);
-
   // =======================
-  // CLAIM INVITES (si présent)
+  // CLAIM INVITES (si présent dans api.js)
   // =======================
   try {
     if (typeof claimInvitesForCurrentUser === "function") {
@@ -198,6 +174,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // =======================
+  // RENDER COLOCS
+  // =======================
   function renderColocs() {
     if (!colocsList) return;
     colocsList.innerHTML = "";
@@ -237,6 +216,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.lucide) lucide.createIcons();
   }
 
+  // =======================
+  // EDITOR
+  // =======================
   function openCreateEditor() {
     isCreating = true;
     selectedColoc = null;
@@ -295,7 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function addUser() {
     const name = (newUserInput?.value || "").trim();
-    let weight = parseFloat(newUserWeight?.value);
+    const weight = parseFloat(newUserWeight?.value);
 
     if (!name) return alert("Nom obligatoire");
     if (tempUsers.some(u => u.name === name)) return alert("Colocataire déjà présent");
@@ -349,15 +331,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // =======================
   // EVENTS
+  // =======================
   if (createBtn) createBtn.onclick = openCreateEditor;
   if (closeEditorBtn) closeEditorBtn.onclick = closeEditor;
   if (addUserBtn) addUserBtn.onclick = addUser;
   if (saveColocBtn) saveColocBtn.onclick = saveColoc;
 
+  // =======================
   // START
+  // =======================
   await loadData();
   if (window.lucide) lucide.createIcons();
 
-  console.log("✅ index.js OK — auth compat + app");
+  console.log("✅ index.js OK — UMD v1 + anti-loop iOS + app");
 });
