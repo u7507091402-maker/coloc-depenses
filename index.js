@@ -1,16 +1,18 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // =======================
-  // INIT SUPABASE (v1 UMD)
+  // INIT SUPABASE
   // =======================
   const SUPABASE_URL = "https://vzsqxtkxzzzqxiyglnlb.supabase.co";
   const SUPABASE_KEY = "sb_publishable_dKJ32JikaTFXd5OBwRpBrw__J7HeB2M";
+
+  // IMPORTANT: sur tes pages tu as chargé supabase.min.js (UMD)
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // api.js utilise une variable globale "supabase" interne
+  // init API (api.js)
   initApi(supabaseClient);
 
   // =======================
-  // LOGIN/UI ELEMENTS (index.html)
+  // LOGIN/UI ELEMENTS
   // =======================
   const loginCard = document.getElementById("login-card");
   const loginBtn = document.getElementById("login-btn");
@@ -21,11 +23,89 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logoutBtn = document.getElementById("logout-btn");
 
   // =======================
-  // CHECK SESSION (v1)
+  // HELPERS AUTH COMPAT (v1 + v2)
   // =======================
-  const session = supabaseClient.auth.session();
+  async function getSessionCompat() {
+    // v2: auth.getSession()
+    if (supabaseClient.auth?.getSession) {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      return data?.session || null;
+    }
+    // v1: auth.session()
+    if (supabaseClient.auth?.session) {
+      return supabaseClient.auth.session() || null;
+    }
+    throw new Error("Auth API inconnue: ni getSession() ni session()");
+  }
 
-  // NOT CONNECTED => show login, hide app
+  async function sendMagicLinkCompat(email, redirectTo) {
+    // v2: signInWithOtp
+    if (supabaseClient.auth?.signInWithOtp) {
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirectTo },
+      });
+      if (error) throw error;
+      return;
+    }
+    // v1: signIn
+    if (supabaseClient.auth?.signIn) {
+      const { error } = await supabaseClient.auth.signIn(
+        { email },
+        { redirectTo }
+      );
+      if (error) throw error;
+      return;
+    }
+    throw new Error("Auth API inconnue: ni signInWithOtp() ni signIn()");
+  }
+
+  async function signOutCompat() {
+    if (supabaseClient.auth?.signOut) {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) throw error;
+      return;
+    }
+    throw new Error("Auth API inconnue: ni signOut()");
+  }
+
+  function getRedirectToIndex() {
+    // Force retour sur index.html (super important sur GitHub Pages)
+    const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
+    return `${window.location.origin}${basePath}index.html`;
+  }
+
+  // =======================
+  // AUTH EVENT (v1 + v2)
+  // =======================
+  // Quand l'utilisateur clique le magic link, parfois iOS met un peu de temps.
+  // On force l'app à revenir sur index après SIGNED_IN.
+  try {
+    if (supabaseClient.auth?.onAuthStateChange) {
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN") {
+          // revient proprement sur index (standalone)
+          location.href = "index.html";
+        }
+      });
+    }
+  } catch (e) {
+    console.warn("onAuthStateChange warning:", e);
+  }
+
+  // =======================
+  // CHECK SESSION
+  // =======================
+  let session = null;
+  try {
+    session = await getSessionCompat();
+  } catch (e) {
+    console.warn("⚠️ Session read failed:", e);
+    session = null;
+  }
+
+  // NOT CONNECTED => login visible / app cachée
   if (!session) {
     if (loginCard) loginCard.style.display = "block";
     if (app) app.style.display = "none";
@@ -37,41 +117,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (loginMessage) loginMessage.textContent = "Envoi du lien…";
 
-        // Toujours revenir sur index.html
-        const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
-        const redirectTo = `${window.location.origin}${basePath}index.html`;
-
-        // ✅ Supabase v1 magic link
-        const { error } = await supabaseClient.auth.signIn(
-          { email },
-          { redirectTo }
-        );
-
-        if (error) {
-          if (loginMessage) loginMessage.textContent = "Erreur : " + error.message;
-        } else {
+        try {
+          await sendMagicLinkCompat(email, getRedirectToIndex());
           if (loginMessage) loginMessage.textContent = "📩 Vérifie tes emails (lien magique) !";
+        } catch (err) {
+          console.error("Magic link error:", err);
+          if (loginMessage) loginMessage.textContent = "Erreur : " + (err.message || JSON.stringify(err));
         }
       };
     }
 
     if (window.lucide) lucide.createIcons();
-    return; // stop ici si pas connecté
+    return;
   }
 
-  // CONNECTED => hide login, show app
+  // CONNECTED => login caché / app visible
   if (loginCard) loginCard.style.display = "none";
   if (app) app.style.display = "block";
 
-  // logout (v1)
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
-      await supabaseClient.auth.signOut();
+      try {
+        await signOutCompat();
+      } catch (e) {
+        console.warn("logout warn:", e);
+      }
       location.reload();
     };
   }
 
-  console.log("✅ Connecté :", session.user.email);
+  console.log("✅ Connecté :", session.user?.email);
 
   // =======================
   // CLAIM INVITES (si présent)
@@ -86,7 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // RÉFÉRENCES DOM (APP)
+  // DOM APP
   // =======================
   const colocsList     = document.getElementById("colocs-list");
   const editor         = document.getElementById("coloc-editor");
@@ -118,18 +193,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       users  = await apiGet("users");
       renderColocs();
     } catch (err) {
-      console.error(err);
+      console.error("loadData:", err);
       alert("Erreur chargement : " + (err.message || JSON.stringify(err)));
     }
   }
 
-  // =======================
-  // RENDER COLOCS
-  // =======================
   function renderColocs() {
     if (!colocsList) return;
-
     colocsList.innerHTML = "";
+
     if (!colocs.length) {
       colocsList.innerHTML = "<li class='muted'>Aucune colocation</li>";
       if (window.lucide) lucide.createIcons();
@@ -147,11 +219,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const editBtn = document.createElement("button");
       editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
-      editBtn.onclick = e => { e.stopPropagation(); openEditEditor(c); };
+      editBtn.onclick = (e) => { e.stopPropagation(); openEditEditor(c); };
 
       const deleteBtn = document.createElement("button");
       deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-      deleteBtn.onclick = async e => {
+      deleteBtn.onclick = async (e) => {
         e.stopPropagation();
         if (!confirm(`Supprimer "${c.name}" ?`)) return;
         await apiDelete("colocs", { id: c.id });
@@ -165,9 +237,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.lucide) lucide.createIcons();
   }
 
-  // =======================
-  // EDITOR
-  // =======================
   function openCreateEditor() {
     isCreating = true;
     selectedColoc = null;
@@ -204,8 +273,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderTempUsers() {
     if (!usersList) return;
-
     usersList.innerHTML = "";
+
     if (!tempUsers.length) {
       usersList.innerHTML = "<li class='muted'>Aucun colocataire</li>";
       return;
@@ -275,24 +344,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       await loadData();
       closeEditor();
     } catch (err) {
-      console.error(err);
+      console.error("saveColoc:", err);
       alert("Erreur enregistrement : " + (err.message || JSON.stringify(err)));
     }
   }
 
-  // =======================
   // EVENTS
-  // =======================
   if (createBtn) createBtn.onclick = openCreateEditor;
   if (closeEditorBtn) closeEditorBtn.onclick = closeEditor;
   if (addUserBtn) addUserBtn.onclick = addUser;
   if (saveColocBtn) saveColocBtn.onclick = saveColoc;
 
-  // =======================
   // START
-  // =======================
   await loadData();
   if (window.lucide) lucide.createIcons();
 
-  console.log("✅ index.js OK — v1 auth + app + claim invites + CRUD");
+  console.log("✅ index.js OK — auth compat + app");
 });
