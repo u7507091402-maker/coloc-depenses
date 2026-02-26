@@ -22,10 +22,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // =======================
   // HELPERS
   // =======================
-  function getRedirectToIndex() {
-    const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
-    return `${window.location.origin}${basePath}index.html`;
-  }
+    function getRedirectToIndex() {
+      return "https://u7507091402-maker.github.io/coloc-depenses/index.html";
+    }
 
   function showLogin() {
     if (loginCard) loginCard.style.display = "block";
