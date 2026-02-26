@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
+//document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   // ===== RÉFÉRENCES DOM =====
   const colocsList     = document.getElementById("colocs-list");
@@ -20,7 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialiser ton API (fonction globale dans api.js)
     initApi(supabaseClient);
-
+    // Après initApi(supabaseClient);
+    try {
+      const res = await claimInvitesForCurrentUser(supabaseClient);
+      if (res.claimed) console.log("✅ Invites réclamées:", res.claimed);
+    } catch (e) {
+      console.warn("⚠️ claimInvitesForCurrentUser:", e);
+    }
   // ===== VARIABLES =====
   let colocs = [];
   let users  = [];
