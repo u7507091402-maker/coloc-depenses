@@ -2,105 +2,130 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Splitly</title>
+  <title>Splitly — Mes colocations</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Couleur navigateur mobile -->
-  <meta name="theme-color" content="#00c46a">
-
-  <!-- Icône iPhone écran d’accueil -->
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-512.png">
-
-  <!-- Favicon navigateur -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icon-512.png">
-
-  <!-- CSS -->
+  <!-- CSS Splitly -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Icônes Lucide -->
+  <!-- Lucide icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Supabase -->
+  <!-- Supabase UMD (stable) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
 </head>
 
 <body>
+  <div class="container">
 
-<div class="container">
-
-  <!-- EN-TÊTE -->
-  <div class="card header center">
-    <h1 class="brand">
-      <img src="icon-512.png" alt="Splitly" class="brand__logo">
-      <span class="brand__text">
-        <span class="brand__name">Splitly</span>
-        <span class="brand__tagline">simplifie vos dépenses</span>
-      </span>
-    </h1>
-
-    <button id="create-coloc-btn" class="primary">
-      <i data-lucide="plus"></i> Créer une colocation
-    </button>
-  </div>
-
-  <!-- LISTE DES COLOCATIONS -->
-  <div class="card">
-    <ul id="colocs-list">
-      <li class="muted">Aucune colocation</li>
-    </ul>
-  </div>
-
-  <!-- ÉDITEUR COLOCATION -->
-  <div id="coloc-editor" class="card" style="display:none">
-
-    <h2 id="editor-title">
-      <i data-lucide="home"></i> Nouvelle colocation
-    </h2>
-
-    <!-- NOM -->
-    <label for="coloc-name-input">Nom de la colocation</label>
-    <input type="text" id="coloc-name-input" placeholder="Nom de la colocation">
-
-    <hr>
-
-    <!-- COLOCATAIRES -->
-    <h3><i data-lucide="users"></i> Colocataires</h3>
-
-    <ul id="users-list">
-      <li class="muted">Aucun colocataire</li>
-    </ul>
-
-    <div class="row">
-      <input type="text" id="new-user-name" placeholder="Nom du colocataire">
-      <input type="number" id="new-user-weight" placeholder="Poids (0-1)" step="0.01" min="0" max="1">
-      <button id="add-user-btn" class="secondary">
-        <i data-lucide="user-plus"></i> Ajouter
-      </button>
+    <!-- HEADER SPLITLY -->
+    <div class="card center">
+      <h1 class="brand">
+        <img src="icon-512.png" alt="Splitly" class="brand__logo">
+        <span class="brand__text">
+          <span class="brand__name">Splitly</span>
+          <span class="brand__tagline">simplifie vos dépenses</span>
+        </span>
+      </h1>
     </div>
 
-    <hr>
+    <!-- LOGIN (affiché uniquement si pas connecté) -->
+    <div id="login-card" class="card" style="display:none;">
+      <h2 style="display:flex; gap:10px; align-items:center;">
+        <i data-lucide="log-in"></i> Connexion
+      </h2>
 
-    <div class="row">
-      <button id="save-coloc-btn" class="primary">
-        <i data-lucide="save"></i> Enregistrer
-      </button>
-      <button id="close-editor-btn" class="secondary">
-        <i data-lucide="arrow-left"></i> Retour
-      </button>
+      <p class="muted" style="text-align:left; padding:0;">
+        Entre ton email et reçois un lien de connexion (magic link).
+      </p>
+
+      <input id="login-email" type="email" placeholder="Email" autocomplete="email">
+
+      <div class="row" style="justify-content:flex-start;">
+        <button id="login-btn" class="primary">
+          <i data-lucide="send"></i> Envoyer le lien
+        </button>
+      </div>
+
+      <p id="login-message" class="muted" style="text-align:left; padding:8px 0 0;"></p>
     </div>
 
-  </div>
+    <!-- APP (cachée si pas connecté) -->
+    <div id="app" style="display:none;">
 
-</div>
+      <!-- ACTIONS TOP -->
+      <div class="card row" style="justify-content:space-between; align-items:center;">
+        <button id="create-coloc-btn" class="primary">
+          <i data-lucide="plus"></i> Créer une colocation
+        </button>
 
-<!-- Scripts -->
-<script src="auth-claim.js"></script>
-<script src="api.js"></script>
-<script src="index.js"></script>
+        <button id="logout-btn" class="secondary">
+          <i data-lucide="log-out"></i> Déconnexion
+        </button>
+      </div>
 
-<script>
-  lucide.createIcons();
-</script>
+      <!-- LISTE DES COLOCATIONS -->
+      <div class="card">
+        <h2 style="display:flex; gap:10px; align-items:center;">
+          <i data-lucide="home"></i> Mes colocations
+        </h2>
+        <ul id="colocs-list">
+          <li class="muted">Chargement…</li>
+        </ul>
+      </div>
 
+      <!-- ÉDITEUR COLOCATION -->
+      <div id="coloc-editor" class="card" style="display:none">
+        <h2 id="editor-title" style="display:flex; gap:10px; align-items:center;">
+          <i data-lucide="edit-3"></i> Nouvelle colocation
+        </h2>
+
+        <label for="coloc-name-input" class="muted" style="display:block; text-align:left; padding:0 0 6px;">
+          Nom de la colocation
+        </label>
+        <input type="text" id="coloc-name-input" placeholder="Nom de la colocation">
+
+        <hr style="border:none; border-top:1px solid rgba(0,0,0,0.06); margin:14px 0;">
+
+        <h3 style="display:flex; gap:10px; align-items:center;">
+          <i data-lucide="users"></i> Colocataires
+        </h3>
+
+        <ul id="users-list">
+          <li class="muted">Aucun colocataire</li>
+        </ul>
+
+        <div class="row" style="margin-top:10px;">
+          <input type="text" id="new-user-name" placeholder="Nom du colocataire">
+          <input type="number" id="new-user-weight" placeholder="Poids (0-1)" step="0.01" min="0" max="1">
+          <button id="add-user-btn" class="secondary">
+            <i data-lucide="user-plus"></i> Ajouter
+          </button>
+        </div>
+
+        <hr style="border:none; border-top:1px solid rgba(0,0,0,0.06); margin:14px 0;">
+
+        <div class="row">
+          <button id="save-coloc-btn" class="primary">
+            <i data-lucide="save"></i> Enregistrer
+          </button>
+          <button id="close-editor-btn" class="secondary">
+            <i data-lucide="arrow-left"></i> Retour
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /#app -->
+
+  </div><!-- /.container -->
+
+  <!-- JS -->
+  <script src="api.js"></script>
+  <script src="index.js"></script>
+
+  <script>
+    // Active Lucide
+    if (window.lucide) lucide.createIcons();
+  </script>
 </body>
 </html>
