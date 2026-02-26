@@ -6,27 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const SUPABASE_KEY = "sb_publishable_dKJ32JikaTFXd5OBwRpBrw__J7HeB2M";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // api.js
   initApi(supabaseClient);
-
-  // =======================
-  // ANTI-BOUCLE iOS (magic link)
-  // =======================
-  // Quand on revient du mail, l'URL peut contenir #access_token=...
-  // On reload UNE SEULE FOIS pour laisser Supabase écrire la session, puis on nettoie l'URL.
-  try {
-    const href = window.location.href;
-    const hasAuthHash = href.includes("#access_token=") || href.includes("type=magiclink");
-
-    if (hasAuthHash && !sessionStorage.getItem("splitly_auth_refreshed")) {
-      sessionStorage.setItem("splitly_auth_refreshed", "1");
-      history.replaceState({}, document.title, "index.html"); // nettoie l'URL
-      window.location.reload();
-      return; // stop
-    }
-  } catch (e) {
-    console.warn("anti-loop warning:", e);
-  }
 
   // =======================
   // LOGIN/UI ELEMENTS
@@ -59,6 +39,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.lucide) lucide.createIcons();
   }
 
+  function cleanUrlToIndex() {
+    // Nettoie le hash (#access_token=...) sans recharger
+    try {
+      history.replaceState({}, document.title, "index.html");
+    } catch (_) {}
+  }
+
+  // =======================
+  // CAPTURE SESSION FROM MAGIC LINK (important iPhone)
+  // =======================
+  // Si on arrive avec un hash contenant access_token, Supabase v1 doit le lire
+  // et stocker la session. On attend un peu. Si toujours rien -> 1 reload max.
+  const hasAuthHash = window.location.hash.includes("access_token=");
+
+  if (hasAuthHash) {
+    // Laisse Supabase initialiser et lire le hash
+    await new Promise(r => setTimeout(r, 150));
+
+    let tmpSession = null;
+    try {
+      tmpSession = supabaseClient.auth.session();
+    } catch (_) {}
+
+    if (!tmpSession) {
+      // 1 seul reload max (anti boucle)
+      if (!sessionStorage.getItem("splitly_auth_reload_once")) {
+        sessionStorage.setItem("splitly_auth_reload_once", "1");
+        // IMPORTANT: on NE nettoie PAS le hash avant le reload
+        window.location.reload();
+        return;
+      }
+    }
+
+    // Si on a une session, ou après le reload unique, on nettoie l’URL
+    cleanUrlToIndex();
+  }
+
   // =======================
   // CHECK SESSION (v1)
   // =======================
@@ -70,9 +87,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     session = null;
   }
 
-  // ✅ si on est connecté, on peut reset le flag anti-boucle
+  // si connecté => on enlève le flag reload
   if (session) {
-    sessionStorage.removeItem("splitly_auth_refreshed");
+    sessionStorage.removeItem("splitly_auth_reload_once");
   }
 
   // =======================
@@ -91,8 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
           const redirectTo = getRedirectToIndex();
 
-          // Supabase v1 magic link:
-          // https://supabase.com/docs/reference/javascript/auth-signin (v1)
+          // Supabase v1 magic link
           const { error } = await supabaseClient.auth.signIn({ email }, { redirectTo });
           if (error) throw error;
 
@@ -125,7 +141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // CLAIM INVITES (si présent dans api.js)
+  // CLAIM INVITES
   // =======================
   try {
     if (typeof claimInvitesForCurrentUser === "function") {
@@ -174,9 +190,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // =======================
-  // RENDER COLOCS
-  // =======================
   function renderColocs() {
     if (!colocsList) return;
     colocsList.innerHTML = "";
@@ -216,9 +229,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.lucide) lucide.createIcons();
   }
 
-  // =======================
-  // EDITOR
-  // =======================
   function openCreateEditor() {
     isCreating = true;
     selectedColoc = null;
@@ -331,19 +341,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // =======================
-  // EVENTS
-  // =======================
   if (createBtn) createBtn.onclick = openCreateEditor;
   if (closeEditorBtn) closeEditorBtn.onclick = closeEditor;
   if (addUserBtn) addUserBtn.onclick = addUser;
   if (saveColocBtn) saveColocBtn.onclick = saveColoc;
 
-  // =======================
-  // START
-  // =======================
   await loadData();
   if (window.lucide) lucide.createIcons();
-
-  console.log("✅ index.js OK — UMD v1 + anti-loop iOS + app");
 });
