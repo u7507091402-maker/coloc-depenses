@@ -1,4 +1,4 @@
-// index.js — Splitly (Supabase UMD v1) — Login + CRUD colocs + edit + delete cascade + users weights
+// index.js — Splitly (Supabase UMD v1) — Login + CRUD colocs + edit + delete cascade + users weights + emails + invites
 document.addEventListener("DOMContentLoaded", async () => {
   // =======================
   // INIT SUPABASE (UMD v1)
@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const SUPABASE_KEY = "sb_publishable_dKJ32JikaTFXd5OBwRpBrw__J7HeB2M";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // api.js (optionnel)
   if (typeof initApi === "function") initApi(supabaseClient);
 
   // =======================
@@ -29,8 +28,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const editorTitle = document.getElementById("editor-title");
   const colocNameInput = document.getElementById("coloc-name-input");
   const usersList = document.getElementById("users-list");
+
   const newUserInput = document.getElementById("new-user-name");
+  const newUserEmail = document.getElementById("new-user-email"); // ✅ bon endroit (éditeur)
   const newUserWeight = document.getElementById("new-user-weight");
+
   const createBtn = document.getElementById("create-coloc-btn");
   const closeEditorBtn = document.getElementById("close-editor-btn");
   const addUserBtn = document.getElementById("add-user-btn");
@@ -40,24 +42,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   // STATE
   // =======================
   let colocs = [];
-  let users = []; // tous les users (admin) ou filtrés par RLS (non-admin)
+  let users = []; // admin: tous, sinon filtré par RLS
   let selectedColoc = null;
   let isCreating = false;
   let tempUsers = [];
 
-  // anti double-init handlers
   let didInitApp = false;
 
   // =======================
   // HELPERS
   // =======================
   function safeMsg(err) {
-    // évite JSON.stringify (peut provoquer stack depth)
     return err?.message ? err.message : String(err);
   }
 
   function getRedirectToIndex() {
-    // Force retour index.html (GitHub Pages)
     const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
     return `${window.location.origin}${basePath}index.html`;
   }
@@ -78,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // AUTH (Supabase v1)
   // =======================
   function getSessionV1() {
-    return supabaseClient.auth.session(); // null si non connecté
+    return supabaseClient.auth.session();
   }
 
   async function sendMagicLink(email) {
@@ -103,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // LOAD DATA (direct Supabase)
+  // LOAD DATA
   // =======================
   async function loadData() {
     try {
@@ -114,7 +113,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (cErr) throw cErr;
       colocs = colocsData || [];
 
-      // on garde users pour l’éditeur (openEditEditor)
       const { data: usersData, error: uErr } = await supabaseClient
         .from("users")
         .select("*");
@@ -123,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderColocs();
     } catch (err) {
-      console.error("loadData error:", err);
+      console.error("loadData:", err);
       alert("Erreur chargement : " + safeMsg(err));
     }
   }
@@ -151,7 +149,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       nameSpan.textContent = c.name;
       nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
 
-      // edit
       const editBtn = document.createElement("button");
       editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
       editBtn.onclick = (e) => {
@@ -159,7 +156,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         openEditEditor(c);
       };
 
-      // delete cascade
       const deleteBtn = document.createElement("button");
       deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
       deleteBtn.onclick = async (e) => {
@@ -205,11 +201,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (editorTitle) editorTitle.textContent = "✏️ Modifier la colocation";
     if (colocNameInput) colocNameInput.value = coloc.name;
 
-    // récupère les users liés à cette coloc
     tempUsers = users
       .filter((u) => Number(u.colocid) === Number(coloc.id))
       .map((u) => ({
         name: u.name,
+        email: (u.email || "").toLowerCase(), // ✅ important
         weight: parseFloat(Number(u.weight || 0).toFixed(4)),
       }));
 
@@ -224,6 +220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (usersList) usersList.innerHTML = "";
     if (newUserInput) newUserInput.value = "";
+    if (newUserEmail) newUserEmail.value = "";
     if (newUserWeight) newUserWeight.value = "";
   }
 
@@ -238,7 +235,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     tempUsers.forEach((u, i) => {
       const li = document.createElement("li");
-      li.textContent = `${u.name} (poids: ${u.weight.toFixed(4)})`;
+      const email = u.email ? u.email : "—";
+      li.textContent = `${u.name} — ${email} (poids: ${Number(u.weight).toFixed(4)})`;
 
       const delBtn = document.createElement("button");
       delBtn.textContent = "✕";
@@ -254,20 +252,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function addUser() {
     const name = (newUserInput?.value || "").trim();
-    const weightRaw = parseFloat(newUserWeight?.value);
+    const email = (newUserEmail?.value || "").trim().toLowerCase();
+    const weight = parseFloat(newUserWeight?.value);
 
     if (!name) return alert("Nom obligatoire");
-    if (tempUsers.some((u) => u.name === name)) return alert("Colocataire déjà présent");
-    if (Number.isNaN(weightRaw) || weightRaw <= 0 || weightRaw > 1) return alert("Poids entre 0 et 1");
+    if (!email || !email.includes("@")) return alert("Email invalide");
+    if (tempUsers.some((u) => (u.email || "").toLowerCase() === email)) return alert("Email déjà présent");
+    if (isNaN(weight) || weight <= 0 || weight > 1) return alert("Poids entre 0 et 1");
 
-    tempUsers.push({ name, weight: parseFloat(weightRaw.toFixed(4)) });
+    tempUsers.push({ name, email, weight: parseFloat(weight.toFixed(4)) });
 
     if (newUserInput) newUserInput.value = "";
+    if (newUserEmail) newUserEmail.value = "";
     if (newUserWeight) newUserWeight.value = "";
-
     renderTempUsers();
   }
 
+  // =======================
+  // SAVE COLOC + USERS + INVITES
+  // =======================
   async function saveColoc() {
     const name = (colocNameInput?.value || "").trim();
     if (!name || !tempUsers.length) return alert("Nom et colocataires obligatoires");
@@ -275,14 +278,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     const totalWeight = tempUsers.reduce((s, u) => s + Number(u.weight || 0), 0);
     if (Math.abs(totalWeight - 1) > 0.0001) return alert("La somme des poids doit faire 1");
 
-    // normalise affichage
-    tempUsers = tempUsers.map((u) => ({ name: u.name, weight: parseFloat(Number(u.weight).toFixed(4)) }));
+    // ✅ normalise SANS perdre email
+    tempUsers = tempUsers.map((u) => ({
+      name: u.name,
+      email: (u.email || "").trim().toLowerCase(),
+      weight: parseFloat(Number(u.weight).toFixed(4)),
+    }));
 
     try {
       let colocIdToUse = null;
 
       if (isCreating) {
-        // CREATE
         const { data: colocRows, error: cErr } = await supabaseClient
           .from("colocs")
           .insert([{ name }])
@@ -292,7 +298,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         colocIdToUse = colocRows?.[0]?.id;
         if (!colocIdToUse) throw new Error("Création colocation échouée (id manquant)");
       } else {
-        // UPDATE
         if (!selectedColoc?.id) throw new Error("Aucune colocation sélectionnée");
         colocIdToUse = selectedColoc.id;
 
@@ -302,22 +307,49 @@ document.addEventListener("DOMContentLoaded", async () => {
           .eq("id", colocIdToUse);
         if (upErr) throw upErr;
 
-        // supprime anciens users puis réinsère
+        // supprime users existants (tu refais une liste propre)
         const { error: delUsersErr } = await supabaseClient
           .from("users")
           .delete()
           .eq("colocid", colocIdToUse);
         if (delUsersErr) throw delUsersErr;
+
+        // (optionnel) si tu veux aussi reset les invites de cette coloc :
+        // await supabaseClient.from("invites").delete().eq("colocid", colocIdToUse);
       }
 
+      // ✅ insert users avec email
       const usersToInsert = tempUsers.map((u) => ({
         name: u.name,
+        email: u.email,
         weight: u.weight,
         colocid: colocIdToUse,
       }));
 
       const { error: uErr } = await supabaseClient.from("users").insert(usersToInsert);
       if (uErr) throw uErr;
+
+      // ✅ create invites (admin-only via RLS)
+      // Si tu as une contrainte unique (colocid,email), tu peux faire upsert.
+      // Sinon, on insère et on ignore l'erreur "duplicate" si tu en as.
+        // ✅ create invites (sans status)
+        const invitesToUpsert = tempUsers.map(u => ({
+          colocid: colocIdToUse,
+          email: u.email,
+          role: "member",
+          // created_by rempli par DEFAULT auth.uid() côté DB
+        }));
+
+        const { error: invErr } = await supabaseClient
+          .from("invites")
+          .upsert(invitesToUpsert, { onConflict: "colocid,email" });
+
+        if (invErr) throw invErr;
+        // fallback si pas d'onConflict/unique :
+        // const { error: invErr2 } = await supabaseClient.from("invites").insert(invitesToInsert);
+        // if (invErr2) throw invErr2;
+        throw invErr;
+      }
 
       closeEditor();
       await loadData();
@@ -350,7 +382,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
     }
 
-    // Claim invites (si tu as gardé cette fonction)
     try {
       if (typeof claimInvitesForCurrentUser === "function") {
         await claimInvitesForCurrentUser(supabaseClient);
@@ -390,11 +421,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // connecté
   showApp();
   await initAppIfNeeded();
 
-  // écoute auth state change SANS rediriger/reloader
   try {
     supabaseClient.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_IN") {
