@@ -1,3 +1,4 @@
+// index.js — Splitly (Supabase UMD v1) — Login + CRUD colocs + edit + delete cascade + users weights
 document.addEventListener("DOMContentLoaded", async () => {
   // =======================
   // INIT SUPABASE (UMD v1)
@@ -6,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const SUPABASE_KEY = "sb_publishable_dKJ32JikaTFXd5OBwRpBrw__J7HeB2M";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // api.js (si tu t’en sers encore)
+  // api.js (optionnel)
   if (typeof initApi === "function") initApi(supabaseClient);
 
   // =======================
@@ -17,7 +18,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loginEmail = document.getElementById("login-email");
   const loginMessage = document.getElementById("login-message");
 
+  // =======================
   // DOM (APP)
+  // =======================
   const app = document.getElementById("app");
   const logoutBtn = document.getElementById("logout-btn");
 
@@ -37,15 +40,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   // STATE
   // =======================
   let colocs = [];
-  let users = [];
+  let users = []; // tous les users (admin) ou filtrés par RLS (non-admin)
   let selectedColoc = null;
   let isCreating = false;
   let tempUsers = [];
 
-  // ⚠️ Guard anti double-init (évite empilement handlers)
+  // anti double-init handlers
   let didInitApp = false;
 
+  // =======================
+  // HELPERS
+  // =======================
+  function safeMsg(err) {
+    // évite JSON.stringify (peut provoquer stack depth)
+    return err?.message ? err.message : String(err);
+  }
+
   function getRedirectToIndex() {
+    // Force retour index.html (GitHub Pages)
     const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
     return `${window.location.origin}${basePath}index.html`;
   }
@@ -62,13 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.lucide) lucide.createIcons();
   }
 
-  function safeMsg(err) {
-    // évite JSON.stringify qui peut déclencher "stack depth..."
-    return (err && err.message) ? err.message : String(err);
-  }
-
   // =======================
-  // AUTH: session (v1)
+  // AUTH (Supabase v1)
   // =======================
   function getSessionV1() {
     return supabaseClient.auth.session(); // null si non connecté
@@ -86,11 +93,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // DATA LOAD (direct Supabase, pas apiGet)
+  // ADMIN DELETE CASCADE (RPC)
+  // =======================
+  async function deleteColocCascade(colocId) {
+    const { error } = await supabaseClient.rpc("admin_delete_coloc", {
+      p_colocid: Number(colocId),
+    });
+    if (error) throw error;
+  }
+
+  // =======================
+  // LOAD DATA (direct Supabase)
   // =======================
   async function loadData() {
     try {
-      // Admin verra tout via RLS (is_admin), sinon seulement ses colocs via memberships
       const { data: colocsData, error: cErr } = await supabaseClient
         .from("colocs")
         .select("*")
@@ -98,6 +114,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (cErr) throw cErr;
       colocs = colocsData || [];
 
+      // on garde users pour l’éditeur (openEditEditor)
       const { data: usersData, error: uErr } = await supabaseClient
         .from("users")
         .select("*");
@@ -110,18 +127,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert("Erreur chargement : " + safeMsg(err));
     }
   }
-    async function deleteColocCascade(colocId) {
-      const { error } = await supabaseClient.rpc("admin_delete_coloc", {
-        p_colocid: Number(colocId)
-      });
-      if (error) throw error;
-    }
 
   // =======================
   // RENDER COLOCS
   // =======================
   function renderColocs() {
     if (!colocsList) return;
+
     colocsList.innerHTML = "";
 
     if (!colocs.length) {
@@ -130,81 +142,86 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-      colocs.forEach(c => {
-        const li = document.createElement("li");
-        li.className = "coloc-item";
+    colocs.forEach((c) => {
+      const li = document.createElement("li");
+      li.className = "coloc-item";
 
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "coloc-name";
-        nameSpan.textContent = c.name;
-        nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "coloc-name";
+      nameSpan.textContent = c.name;
+      nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
 
-        // ✅ bouton edit
-        const editBtn = document.createElement("button");
-        editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
-        editBtn.onclick = (e) => {
-          e.stopPropagation();
-          openEditEditor(c);
-        };
+      // edit
+      const editBtn = document.createElement("button");
+      editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        openEditEditor(c);
+      };
 
-        // ✅ bouton delete
-        const deleteBtn = document.createElement("button");
-        deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-        deleteBtn.onclick = async (e) => {
-          e.stopPropagation();
-          if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
+      // delete cascade
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+      deleteBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
 
-          try {
-            await deleteColocCascade(c.id);
-            await loadData();
-          } catch (err) {
-            console.error("delete coloc:", err);
-            alert("Erreur suppression : " + safeMsg(err));
-          }
-        };
+        try {
+          await deleteColocCascade(c.id);
+          await loadData();
+        } catch (err) {
+          console.error("delete coloc:", err);
+          alert("Erreur suppression : " + safeMsg(err));
+        }
+      };
 
-        li.append(nameSpan, editBtn, deleteBtn);
-        colocsList.appendChild(li);
-      });
+      li.append(nameSpan, editBtn, deleteBtn);
+      colocsList.appendChild(li);
+    });
+
     if (window.lucide) lucide.createIcons();
   }
 
   // =======================
-  // EDITOR (création / édition locale)
+  // EDITOR
   // =======================
   function openCreateEditor() {
     isCreating = true;
     selectedColoc = null;
     tempUsers = [];
+
     if (editor) editor.style.display = "block";
     if (editorTitle) editorTitle.textContent = "➕ Nouvelle colocation";
     if (colocNameInput) colocNameInput.value = "";
+
     renderTempUsers();
   }
-    
-    function openEditEditor(coloc) {
-      isCreating = false;
-      selectedColoc = coloc;
 
-      if (editor) editor.style.display = "block";
-      if (editorTitle) editorTitle.textContent = "✏️ Modifier la colocation";
-      if (colocNameInput) colocNameInput.value = coloc.name;
+  function openEditEditor(coloc) {
+    isCreating = false;
+    selectedColoc = coloc;
 
-      // récupère les users liés à cette coloc
-      tempUsers = users
-        .filter(u => Number(u.colocid) === Number(coloc.id))
-        .map(u => ({
-          name: u.name,
-          weight: parseFloat(Number(u.weight || 0).toFixed(4))
-        }));
+    if (editor) editor.style.display = "block";
+    if (editorTitle) editorTitle.textContent = "✏️ Modifier la colocation";
+    if (colocNameInput) colocNameInput.value = coloc.name;
 
-      renderTempUsers();
-    }
+    // récupère les users liés à cette coloc
+    tempUsers = users
+      .filter((u) => Number(u.colocid) === Number(coloc.id))
+      .map((u) => ({
+        name: u.name,
+        weight: parseFloat(Number(u.weight || 0).toFixed(4)),
+      }));
+
+    renderTempUsers();
+  }
+
   function closeEditor() {
     if (editor) editor.style.display = "none";
     selectedColoc = null;
     isCreating = false;
     tempUsers = [];
+
     if (usersList) usersList.innerHTML = "";
     if (newUserInput) newUserInput.value = "";
     if (newUserWeight) newUserWeight.value = "";
@@ -212,6 +229,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderTempUsers() {
     if (!usersList) return;
+
     usersList.innerHTML = "";
     if (!tempUsers.length) {
       usersList.innerHTML = "<li class='muted'>Aucun colocataire</li>";
@@ -224,7 +242,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const delBtn = document.createElement("button");
       delBtn.textContent = "✕";
-      delBtn.onclick = () => { tempUsers.splice(i, 1); renderTempUsers(); };
+      delBtn.onclick = () => {
+        tempUsers.splice(i, 1);
+        renderTempUsers();
+      };
 
       li.appendChild(delBtn);
       usersList.appendChild(li);
@@ -233,15 +254,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function addUser() {
     const name = (newUserInput?.value || "").trim();
-    const weight = parseFloat(newUserWeight?.value);
+    const weightRaw = parseFloat(newUserWeight?.value);
 
     if (!name) return alert("Nom obligatoire");
-    if (tempUsers.some(u => u.name === name)) return alert("Colocataire déjà présent");
-    if (isNaN(weight) || weight <= 0 || weight > 1) return alert("Poids entre 0 et 1");
+    if (tempUsers.some((u) => u.name === name)) return alert("Colocataire déjà présent");
+    if (Number.isNaN(weightRaw) || weightRaw <= 0 || weightRaw > 1) return alert("Poids entre 0 et 1");
 
-    tempUsers.push({ name, weight: parseFloat(weight.toFixed(4)) });
+    tempUsers.push({ name, weight: parseFloat(weightRaw.toFixed(4)) });
+
     if (newUserInput) newUserInput.value = "";
     if (newUserWeight) newUserWeight.value = "";
+
     renderTempUsers();
   }
 
@@ -249,25 +272,48 @@ document.addEventListener("DOMContentLoaded", async () => {
     const name = (colocNameInput?.value || "").trim();
     if (!name || !tempUsers.length) return alert("Nom et colocataires obligatoires");
 
-    const totalWeight = tempUsers.reduce((s, u) => s + u.weight, 0);
+    const totalWeight = tempUsers.reduce((s, u) => s + Number(u.weight || 0), 0);
     if (Math.abs(totalWeight - 1) > 0.0001) return alert("La somme des poids doit faire 1");
 
+    // normalise affichage
+    tempUsers = tempUsers.map((u) => ({ name: u.name, weight: parseFloat(Number(u.weight).toFixed(4)) }));
+
     try {
-      // 1) Insert coloc
-      const { data: colocRows, error: cErr } = await supabaseClient
-        .from("colocs")
-        .insert([{ name }])
-        .select("*");
-      if (cErr) throw cErr;
+      let colocIdToUse = null;
 
-      const newColocId = colocRows?.[0]?.id;
-      if (!newColocId) throw new Error("Création colocation échouée (id manquant)");
+      if (isCreating) {
+        // CREATE
+        const { data: colocRows, error: cErr } = await supabaseClient
+          .from("colocs")
+          .insert([{ name }])
+          .select("*");
+        if (cErr) throw cErr;
 
-      // 2) Insert users
-      const usersToInsert = tempUsers.map(u => ({
+        colocIdToUse = colocRows?.[0]?.id;
+        if (!colocIdToUse) throw new Error("Création colocation échouée (id manquant)");
+      } else {
+        // UPDATE
+        if (!selectedColoc?.id) throw new Error("Aucune colocation sélectionnée");
+        colocIdToUse = selectedColoc.id;
+
+        const { error: upErr } = await supabaseClient
+          .from("colocs")
+          .update({ name })
+          .eq("id", colocIdToUse);
+        if (upErr) throw upErr;
+
+        // supprime anciens users puis réinsère
+        const { error: delUsersErr } = await supabaseClient
+          .from("users")
+          .delete()
+          .eq("colocid", colocIdToUse);
+        if (delUsersErr) throw delUsersErr;
+      }
+
+      const usersToInsert = tempUsers.map((u) => ({
         name: u.name,
         weight: u.weight,
-        colocid: newColocId
+        colocid: colocIdToUse,
       }));
 
       const { error: uErr } = await supabaseClient.from("users").insert(usersToInsert);
@@ -282,13 +328,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // INIT APP (only once)
+  // INIT APP (once)
   // =======================
   async function initAppIfNeeded() {
     if (didInitApp) return;
     didInitApp = true;
 
-    // Handlers
     if (createBtn) createBtn.onclick = openCreateEditor;
     if (closeEditorBtn) closeEditorBtn.onclick = closeEditor;
     if (addUserBtn) addUserBtn.onclick = addUser;
@@ -296,7 +341,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (logoutBtn) {
       logoutBtn.onclick = async () => {
-        try { await doLogout(); } catch(e) { console.warn(e); }
+        try {
+          await doLogout();
+        } catch (e) {
+          console.warn("logout:", e);
+        }
         location.reload();
       };
     }
@@ -345,11 +394,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   showApp();
   await initAppIfNeeded();
 
-  // IMPORTANT: on écoute auth state change SANS rediriger/recharger
+  // écoute auth state change SANS rediriger/reloader
   try {
     supabaseClient.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_IN") {
-        // on refresh l’UI + data, pas de reload !
         showApp();
         await initAppIfNeeded();
       }
