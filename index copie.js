@@ -124,42 +124,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-      colocs.forEach(c => {
-        const li = document.createElement("li");
-        li.className = "coloc-item";
+    colocs.forEach(c => {
+      const li = document.createElement("li");
+      li.className = "coloc-item";
 
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "coloc-name";
-        nameSpan.textContent = c.name;
-        nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "coloc-name";
+      nameSpan.textContent = c.name;
+      nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
 
-        // ✅ bouton edit
-        const editBtn = document.createElement("button");
-        editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
-        editBtn.onclick = (e) => {
-          e.stopPropagation();
-          openEditEditor(c);
-        };
+      // (Optionnel: tu peux remettre edit/delete plus tard)
+      li.appendChild(nameSpan);
+      colocsList.appendChild(li);
+    });
 
-        // ✅ bouton delete
-        const deleteBtn = document.createElement("button");
-        deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-        deleteBtn.onclick = async (e) => {
-          e.stopPropagation();
-          if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
-
-          try {
-            await deleteColocCascade(c.id);
-            await loadData();
-          } catch (err) {
-            console.error("delete coloc:", err);
-            alert("Erreur suppression : " + safeMsg(err));
-          }
-        };
-
-        li.append(nameSpan, editBtn, deleteBtn);
-        colocsList.appendChild(li);
-      });
     if (window.lucide) lucide.createIcons();
   }
 
