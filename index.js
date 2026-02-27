@@ -110,6 +110,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert("Erreur chargement : " + safeMsg(err));
     }
   }
+    async function deleteColocCascade(colocId) {
+      const { error } = await supabaseClient.rpc("admin_delete_coloc", {
+        p_colocid: Number(colocId)
+      });
+      if (error) throw error;
+    }
 
   // =======================
   // RENDER COLOCS
