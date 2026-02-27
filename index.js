@@ -175,7 +175,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (colocNameInput) colocNameInput.value = "";
     renderTempUsers();
   }
+    
+    function openEditEditor(coloc) {
+      isCreating = false;
+      selectedColoc = coloc;
 
+      if (editor) editor.style.display = "block";
+      if (editorTitle) editorTitle.textContent = "✏️ Modifier la colocation";
+      if (colocNameInput) colocNameInput.value = coloc.name;
+
+      // récupère les users liés à cette coloc
+      tempUsers = users
+        .filter(u => Number(u.colocid) === Number(coloc.id))
+        .map(u => ({
+          name: u.name,
+          weight: parseFloat(Number(u.weight || 0).toFixed(4))
+        }));
+
+      renderTempUsers();
+    }
   function closeEditor() {
     if (editor) editor.style.display = "none";
     selectedColoc = null;
