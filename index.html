@@ -61,7 +61,6 @@
       </p>
     </div>
 
-
     <!-- ========== FORCE CHANGE PASSWORD ========== -->
     <div id="force-password-card" class="card" style="display:none;">
       <h2 style="display:flex; gap:10px; align-items:center;">
@@ -72,14 +71,22 @@
         Tu dois modifier ton mot de passe provisoire.
       </p>
 
-      <input id="new-password" type="password" placeholder="Nouveau mot de passe" autocomplete="new-password">
-      <input id="new-password-confirm" type="password" placeholder="Confirmer le mot de passe" autocomplete="new-password">
-      <button id="change-password-btn" class="primary">Changer le mot de passe</button>
+      <input id="new-password"
+             type="password"
+             placeholder="Nouveau mot de passe"
+             autocomplete="new-password">
+
+      <input id="new-password-confirm"
+             type="password"
+             placeholder="Confirmer le mot de passe"
+             autocomplete="new-password">
+
+      <div class="row" style="justify-content:flex-start;">
+        <button id="change-password-btn" class="primary">
           <i data-lucide="save"></i> Valider
         </button>
       </div>
     </div>
-
 
     <!-- ================= APP ================= -->
     <div id="app" style="display:none;">
