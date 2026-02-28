@@ -1,6 +1,5 @@
-// index.js — Splitly — Email/Password Auth + CRUD + Invites
+// index.js — Splitly — Email/Password Auth + CRUD colocs + users(email/weight) + invites + claim memberships
 document.addEventListener("DOMContentLoaded", async () => {
-
   // =======================
   // INIT SUPABASE (UMD v1)
   // =======================
@@ -11,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (typeof initApi === "function") initApi(supabaseClient);
 
   // =======================
-  // DOM LOGIN
+  // DOM (LOGIN)
   // =======================
   const loginCard = document.getElementById("login-card");
   const loginBtn = document.getElementById("login-btn");
@@ -19,12 +18,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loginPassword = document.getElementById("login-password");
   const loginMessage = document.getElementById("login-message");
 
+  // Force change password UI
   const forcePasswordCard = document.getElementById("force-password-card");
   const newPasswordInput = document.getElementById("new-password");
   const changePasswordBtn = document.getElementById("change-password-btn");
 
   // =======================
-  // DOM APP
+  // DOM (APP)
   // =======================
   const app = document.getElementById("app");
   const logoutBtn = document.getElementById("logout-btn");
@@ -65,36 +65,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (loginCard) loginCard.style.display = "block";
     if (app) app.style.display = "none";
     if (forcePasswordCard) forcePasswordCard.style.display = "none";
+    if (window.lucide) lucide.createIcons();
   }
 
   function showApp() {
     if (loginCard) loginCard.style.display = "none";
     if (forcePasswordCard) forcePasswordCard.style.display = "none";
     if (app) app.style.display = "block";
+    if (window.lucide) lucide.createIcons();
   }
 
   function showForcePassword() {
     if (loginCard) loginCard.style.display = "none";
     if (app) app.style.display = "none";
     if (forcePasswordCard) forcePasswordCard.style.display = "block";
+    if (window.lucide) lucide.createIcons();
   }
 
+  // =======================
+  // AUTH (Supabase v1)
+  // =======================
   function getSession() {
-    return supabaseClient.auth.session();
+    return supabaseClient.auth.session(); // null si pas connecté
   }
 
   async function loginWithPassword(email, password) {
+    // Supabase v1
     const { error } = await supabaseClient.auth.signIn({ email, password });
     if (error) throw error;
   }
 
   async function updatePassword(newPassword) {
+    // Supabase v1
     const { error } = await supabaseClient.auth.update({ password: newPassword });
     if (error) throw error;
   }
 
   async function doLogout() {
     const { error } = await supabaseClient.auth.signOut();
+    if (error) throw error;
+  }
+
+  // =======================
+  // RPCs (DB)
+  // =======================
+  async function claimMyInvites() {
+    // crée coloc_members + marque claimed_at
+    const { error } = await supabaseClient.rpc("claim_my_invites");
     if (error) throw error;
   }
 
@@ -109,22 +126,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   // LOAD DATA
   // =======================
   async function loadData() {
-    const { data: colocsData, error: cErr } = await supabaseClient
-      .from("colocs")
-      .select("*")
-      .order("id", { ascending: false });
+    try {
+      const { data: colocsData, error: cErr } = await supabaseClient
+        .from("colocs")
+        .select("*")
+        .order("id", { ascending: false });
+      if (cErr) throw cErr;
+      colocs = colocsData || [];
 
-    if (cErr) throw cErr;
-    colocs = colocsData || [];
+      const { data: usersData, error: uErr } = await supabaseClient
+        .from("users")
+        .select("*");
+      if (uErr) throw uErr;
+      users = usersData || [];
 
-    const { data: usersData, error: uErr } = await supabaseClient
-      .from("users")
-      .select("*");
-
-    if (uErr) throw uErr;
-    users = usersData || [];
-
-    renderColocs();
+      renderColocs();
+    } catch (err) {
+      console.error("loadData:", err);
+      alert("Erreur chargement : " + safeMsg(err));
+    }
   }
 
   // =======================
@@ -132,10 +152,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // =======================
   function renderColocs() {
     if (!colocsList) return;
+
     colocsList.innerHTML = "";
 
     if (!colocs.length) {
       colocsList.innerHTML = "<li class='muted'>Aucune colocation</li>";
+      if (window.lucide) lucide.createIcons();
       return;
     }
 
@@ -144,28 +166,38 @@ document.addEventListener("DOMContentLoaded", async () => {
       li.className = "coloc-item";
 
       const nameSpan = document.createElement("span");
+      nameSpan.className = "coloc-name";
       nameSpan.textContent = c.name;
       nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
 
+      // edit
       const editBtn = document.createElement("button");
-      editBtn.textContent = "✏️";
+      editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
       editBtn.onclick = (e) => {
         e.stopPropagation();
         openEditEditor(c);
       };
 
+      // delete cascade
       const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "🗑";
+      deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
       deleteBtn.onclick = async (e) => {
         e.stopPropagation();
-        if (!confirm(`Supprimer "${c.name}" ?`)) return;
-        await deleteColocCascade(c.id);
-        await loadData();
+        if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
+        try {
+          await deleteColocCascade(c.id);
+          await loadData();
+        } catch (err) {
+          console.error("delete coloc:", err);
+          alert("Erreur suppression : " + safeMsg(err));
+        }
       };
 
       li.append(nameSpan, editBtn, deleteBtn);
       colocsList.appendChild(li);
     });
+
+    if (window.lucide) lucide.createIcons();
   }
 
   // =======================
@@ -175,116 +207,187 @@ document.addEventListener("DOMContentLoaded", async () => {
     isCreating = true;
     selectedColoc = null;
     tempUsers = [];
-    editor.style.display = "block";
-    editorTitle.textContent = "Nouvelle colocation";
-    colocNameInput.value = "";
+
+    if (editor) editor.style.display = "block";
+    if (editorTitle) editorTitle.textContent = "➕ Nouvelle colocation";
+    if (colocNameInput) colocNameInput.value = "";
+
     renderTempUsers();
   }
 
   function openEditEditor(coloc) {
     isCreating = false;
     selectedColoc = coloc;
-    editor.style.display = "block";
-    editorTitle.textContent = "Modifier la colocation";
-    colocNameInput.value = coloc.name;
+
+    if (editor) editor.style.display = "block";
+    if (editorTitle) editorTitle.textContent = "✏️ Modifier la colocation";
+    if (colocNameInput) colocNameInput.value = coloc.name;
 
     tempUsers = users
-      .filter(u => Number(u.colocid) === Number(coloc.id))
-      .map(u => ({
+      .filter((u) => Number(u.colocid) === Number(coloc.id))
+      .map((u) => ({
         name: u.name,
-        email: (u.email || "").toLowerCase(),
-        weight: parseFloat(Number(u.weight || 0))
+        email: (u.email || "").trim().toLowerCase(),
+        weight: parseFloat(Number(u.weight || 0).toFixed(4)),
       }));
 
     renderTempUsers();
   }
 
+  function closeEditor() {
+    if (editor) editor.style.display = "none";
+    selectedColoc = null;
+    isCreating = false;
+    tempUsers = [];
+
+    if (usersList) usersList.innerHTML = "";
+    if (newUserInput) newUserInput.value = "";
+    if (newUserEmail) newUserEmail.value = "";
+    if (newUserWeight) newUserWeight.value = "";
+  }
+
   function renderTempUsers() {
+    if (!usersList) return;
+
     usersList.innerHTML = "";
+    if (!tempUsers.length) {
+      usersList.innerHTML = "<li class='muted'>Aucun colocataire</li>";
+      return;
+    }
 
     tempUsers.forEach((u, i) => {
       const li = document.createElement("li");
-      li.textContent = `${u.name} — ${u.email} (${u.weight})`;
+      const email = u.email ? u.email : "—";
+      li.textContent = `${u.name} — ${email} (poids: ${Number(u.weight).toFixed(4)})`;
 
-      const del = document.createElement("button");
-      del.textContent = "✕";
-      del.onclick = () => {
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "✕";
+      delBtn.onclick = () => {
         tempUsers.splice(i, 1);
         renderTempUsers();
       };
 
-      li.appendChild(del);
+      li.appendChild(delBtn);
       usersList.appendChild(li);
     });
   }
 
   function addUser() {
-    const name = newUserInput.value.trim();
-    const email = newUserEmail.value.trim().toLowerCase();
-    const weight = parseFloat(newUserWeight.value);
+    const name = (newUserInput?.value || "").trim();
+    const email = (newUserEmail?.value || "").trim().toLowerCase();
+    const weight = parseFloat(newUserWeight?.value);
 
-    if (!name || !email) return alert("Nom et email requis");
+    if (!name) return alert("Nom obligatoire");
+    if (!email || !email.includes("@")) return alert("Email invalide");
+    if (tempUsers.some((u) => (u.email || "").toLowerCase() === email)) return alert("Email déjà présent");
+    if (isNaN(weight) || weight <= 0 || weight > 1) return alert("Poids entre 0 et 1");
 
-    tempUsers.push({ name, email, weight });
+    tempUsers.push({ name, email, weight: parseFloat(weight.toFixed(4)) });
+
+    if (newUserInput) newUserInput.value = "";
+    if (newUserEmail) newUserEmail.value = "";
+    if (newUserWeight) newUserWeight.value = "";
     renderTempUsers();
-
-    newUserInput.value = "";
-    newUserEmail.value = "";
-    newUserWeight.value = "";
   }
 
   // =======================
-  // SAVE COLOC
+  // SAVE COLOC + USERS + INVITES
   // =======================
   async function saveColoc() {
-    const name = colocNameInput.value.trim();
-    if (!name) return alert("Nom obligatoire");
+    const name = (colocNameInput?.value || "").trim();
+    if (!name || !tempUsers.length) return alert("Nom et colocataires obligatoires");
 
-    let colocId;
+    const totalWeight = tempUsers.reduce((s, u) => s + Number(u.weight || 0), 0);
+    if (Math.abs(totalWeight - 1) > 0.0001) return alert("La somme des poids doit faire 1");
 
-    if (isCreating) {
-      const { data, error } = await supabaseClient
-        .from("colocs")
-        .insert([{ name }])
-        .select("*");
-
-      if (error) throw error;
-      colocId = data[0].id;
-    } else {
-      colocId = selectedColoc.id;
-    }
-
-    await supabaseClient.from("users").delete().eq("colocid", colocId);
-
-    const usersToInsert = tempUsers.map(u => ({
+    const normalized = tempUsers.map((u) => ({
       name: u.name,
-      email: u.email,
-      weight: u.weight,
-      colocid: colocId
+      email: (u.email || "").trim().toLowerCase(),
+      weight: parseFloat(Number(u.weight).toFixed(4)),
     }));
 
-    await supabaseClient.from("users").insert(usersToInsert);
+    try {
+      let colocIdToUse = null;
 
-    editor.style.display = "none";
-    await loadData();
+      if (isCreating) {
+        const { data: colocRows, error: cErr } = await supabaseClient
+          .from("colocs")
+          .insert([{ name }])
+          .select("*");
+        if (cErr) throw cErr;
+
+        colocIdToUse = colocRows?.[0]?.id;
+        if (!colocIdToUse) throw new Error("Création colocation échouée (id manquant)");
+      } else {
+        if (!selectedColoc?.id) throw new Error("Aucune colocation sélectionnée");
+        colocIdToUse = selectedColoc.id;
+
+        const { error: upErr } = await supabaseClient
+          .from("colocs")
+          .update({ name })
+          .eq("id", colocIdToUse);
+        if (upErr) throw upErr;
+
+        const { error: delUsersErr } = await supabaseClient
+          .from("users")
+          .delete()
+          .eq("colocid", colocIdToUse);
+        if (delUsersErr) throw delUsersErr;
+      }
+
+      // insert users
+      const usersToInsert = normalized.map((u) => ({
+        name: u.name,
+        email: u.email,
+        weight: u.weight,
+        colocid: colocIdToUse,
+      }));
+
+      const { error: uErr } = await supabaseClient.from("users").insert(usersToInsert);
+      if (uErr) throw uErr;
+
+      // upsert invites (nécessite unique(colocid,email))
+      const invitesToUpsert = normalized.map((u) => ({
+        colocid: colocIdToUse,
+        email: u.email,
+        role: "member",
+      }));
+
+      const { error: invErr } = await supabaseClient
+        .from("invites")
+        .upsert(invitesToUpsert, { onConflict: "colocid,email" });
+      if (invErr) throw invErr;
+
+      closeEditor();
+      await loadData();
+    } catch (err) {
+      console.error("saveColoc:", err);
+      alert("Erreur enregistrement : " + safeMsg(err));
+    }
   }
 
   // =======================
-  // INIT APP
+  // INIT APP (once)
   // =======================
-  async function initApp() {
+  async function initAppIfNeeded() {
     if (didInitApp) return;
     didInitApp = true;
 
-    createBtn.onclick = openCreateEditor;
-    closeEditorBtn.onclick = () => editor.style.display = "none";
-    addUserBtn.onclick = addUser;
-    saveColocBtn.onclick = saveColoc;
+    if (createBtn) createBtn.onclick = openCreateEditor;
+    if (closeEditorBtn) closeEditorBtn.onclick = closeEditor;
+    if (addUserBtn) addUserBtn.onclick = addUser;
+    if (saveColocBtn) saveColocBtn.onclick = saveColoc;
 
-    logoutBtn.onclick = async () => {
-      await doLogout();
-      location.reload();
-    };
+    if (logoutBtn) {
+      logoutBtn.onclick = async () => {
+        try {
+          await doLogout();
+        } catch (e) {
+          console.warn("logout:", e);
+        }
+        location.reload();
+      };
+    }
 
     await loadData();
   }
@@ -294,53 +397,98 @@ document.addEventListener("DOMContentLoaded", async () => {
   // =======================
   const session = getSession();
 
+  // --- PAS CONNECTÉ ---
   if (!session) {
     showLogin();
 
-    loginBtn.onclick = async () => {
-      const email = loginEmail.value.trim().toLowerCase();
-      const password = loginPassword.value;
+    if (loginBtn) {
+      loginBtn.onclick = async () => {
+        const email = (loginEmail?.value || "").trim().toLowerCase();
+        const password = loginPassword?.value || "";
 
-      try {
-        await loginWithPassword(email, password);
-        location.reload();
-      } catch (err) {
-        loginMessage.textContent = safeMsg(err);
-      }
-    };
+        if (!email || !password) {
+          if (loginMessage) loginMessage.textContent = "Email + mot de passe requis.";
+          return;
+        }
 
+        if (loginMessage) loginMessage.textContent = "Connexion…";
+
+        try {
+          await loginWithPassword(email, password);
+          location.reload();
+        } catch (err) {
+          console.error("login:", err);
+          if (loginMessage) loginMessage.textContent = "Erreur : " + safeMsg(err);
+        }
+      };
+    }
     return;
   }
 
-  // Vérifie si changement mot de passe requis
-  const { data: profile } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", session.user.id)
-    .single();
+  // --- CONNECTÉ ---
+  // 1) réclame les invites => crée coloc_members si besoin
+  try {
+    await claimMyInvites();
+  } catch (e) {
+    console.warn("claim_my_invites:", e);
+  }
+
+  // 2) check profile pour forcer changement mdp
+  let profile = null;
+  try {
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("id, must_change_password")
+      .eq("id", session.user.id)
+      .single();
+
+    if (error) throw error;
+    profile = data;
+  } catch (e) {
+    console.warn("profile read:", e);
+  }
 
   if (profile?.must_change_password) {
     showForcePassword();
 
-    changePasswordBtn.onclick = async () => {
-      const newPass = newPasswordInput.value;
-      if (!newPass || newPass.length < 6) {
-        alert("Mot de passe trop court");
-        return;
-      }
+    if (changePasswordBtn) {
+      changePasswordBtn.onclick = async () => {
+        const newPass = (newPasswordInput?.value || "").trim();
+        if (newPass.length < 6) {
+          alert("Mot de passe trop court (min 6)");
+          return;
+        }
 
-      await updatePassword(newPass);
-      await supabaseClient
-        .from("profiles")
-        .update({ must_change_password: false })
-        .eq("id", session.user.id);
+        try {
+          await updatePassword(newPass);
 
-      location.reload();
-    };
+          const { error: upErr } = await supabaseClient
+            .from("profiles")
+            .update({ must_change_password: false })
+            .eq("id", session.user.id);
 
+          if (upErr) throw upErr;
+
+          location.reload();
+        } catch (err) {
+          console.error("update password:", err);
+          alert("Erreur : " + safeMsg(err));
+        }
+      };
+    }
     return;
   }
 
   showApp();
-  await initApp();
+  await initAppIfNeeded();
+
+  // re-sync UI si event auth
+  try {
+    supabaseClient.auth.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_OUT") showLogin();
+      if (event === "SIGNED_IN") location.reload();
+    });
+  } catch (e) {
+    console.warn("onAuthStateChange:", e);
+  }
 });
