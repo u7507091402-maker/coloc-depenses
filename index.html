@@ -11,14 +11,14 @@
   <!-- Lucide icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Supabase UMD (stable) -->
+  <!-- Supabase UMD v1 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
 </head>
 
 <body>
   <div class="container">
 
-    <!-- HEADER SPLITLY -->
+    <!-- HEADER -->
     <div class="card center">
       <h1 class="brand">
         <img src="icon-512.png" alt="Splitly" class="brand__logo">
@@ -29,32 +29,68 @@
       </h1>
     </div>
 
-    <!-- LOGIN (affiché uniquement si pas connecté) -->
+    <!-- ================= LOGIN ================= -->
     <div id="login-card" class="card" style="display:none;">
       <h2 style="display:flex; gap:10px; align-items:center;">
         <i data-lucide="log-in"></i> Connexion
       </h2>
 
       <p class="muted" style="text-align:left; padding:0;">
-        Entre ton email et reçois un lien de connexion (magic link).
+        Connecte-toi avec ton email et ton mot de passe.
       </p>
 
-      <input id="login-email" type="email" placeholder="Email" autocomplete="email">
+      <input id="login-email"
+             type="email"
+             placeholder="Email"
+             autocomplete="email">
+
+      <input id="login-password"
+             type="password"
+             placeholder="Mot de passe"
+             autocomplete="current-password">
 
       <div class="row" style="justify-content:flex-start;">
         <button id="login-btn" class="primary">
-          <i data-lucide="send"></i> Envoyer le lien
+          <i data-lucide="log-in"></i> Se connecter
         </button>
       </div>
 
-      <p id="login-message" class="muted" style="text-align:left; padding:8px 0 0;"></p>
+      <p id="login-message"
+         class="muted"
+         style="text-align:left; padding:8px 0 0;">
+      </p>
     </div>
 
-    <!-- APP (cachée si pas connecté) -->
+
+    <!-- ========== FORCE CHANGE PASSWORD ========== -->
+    <div id="force-password-card" class="card" style="display:none;">
+      <h2 style="display:flex; gap:10px; align-items:center;">
+        <i data-lucide="shield"></i> Nouveau mot de passe
+      </h2>
+
+      <p class="muted" style="text-align:left;">
+        Tu dois modifier ton mot de passe provisoire.
+      </p>
+
+      <input id="new-password"
+             type="password"
+             placeholder="Nouveau mot de passe"
+             autocomplete="new-password">
+
+      <div class="row">
+        <button id="change-password-btn" class="primary">
+          <i data-lucide="save"></i> Valider
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ================= APP ================= -->
     <div id="app" style="display:none;">
 
       <!-- ACTIONS TOP -->
-      <div class="card row" style="justify-content:space-between; align-items:center;">
+      <div class="card row"
+           style="justify-content:space-between; align-items:center;">
         <button id="create-coloc-btn" class="primary">
           <i data-lucide="plus"></i> Créer une colocation
         </button>
@@ -64,28 +100,38 @@
         </button>
       </div>
 
-      <!-- LISTE DES COLOCATIONS -->
+      <!-- LISTE COLOCS -->
       <div class="card">
         <h2 style="display:flex; gap:10px; align-items:center;">
           <i data-lucide="home"></i> Mes colocations
         </h2>
+
         <ul id="colocs-list">
           <li class="muted">Chargement…</li>
         </ul>
       </div>
 
-      <!-- ÉDITEUR COLOCATION -->
+      <!-- EDITOR -->
       <div id="coloc-editor" class="card" style="display:none">
-        <h2 id="editor-title" style="display:flex; gap:10px; align-items:center;">
+
+        <h2 id="editor-title"
+            style="display:flex; gap:10px; align-items:center;">
           <i data-lucide="edit-3"></i> Nouvelle colocation
         </h2>
 
-        <label for="coloc-name-input" class="muted" style="display:block; text-align:left; padding:0 0 6px;">
+        <label for="coloc-name-input"
+               class="muted"
+               style="display:block; text-align:left; padding:0 0 6px;">
           Nom de la colocation
         </label>
-        <input type="text" id="coloc-name-input" placeholder="Nom de la colocation">
 
-        <hr style="border:none; border-top:1px solid rgba(0,0,0,0.06); margin:14px 0;">
+        <input type="text"
+               id="coloc-name-input"
+               placeholder="Nom de la colocation">
+
+        <hr style="border:none;
+                   border-top:1px solid rgba(0,0,0,0.06);
+                   margin:14px 0;">
 
         <h3 style="display:flex; gap:10px; align-items:center;">
           <i data-lucide="users"></i> Colocataires
@@ -96,37 +142,53 @@
         </ul>
 
         <div class="row" style="margin-top:10px;">
-          <input type="text" id="new-user-name" placeholder="Nom du colocataire">
-          <input type="email" id="new-user-email" placeholder="Email" autocomplete="email">
-          <input type="number" id="new-user-weight" placeholder="Poids (0-1)" step="0.01" min="0" max="1">
+          <input type="text"
+                 id="new-user-name"
+                 placeholder="Nom">
+
+          <input type="email"
+                 id="new-user-email"
+                 placeholder="Email"
+                 autocomplete="email">
+
+          <input type="number"
+                 id="new-user-weight"
+                 placeholder="Poids (0-1)"
+                 step="0.01"
+                 min="0"
+                 max="1">
+
           <button id="add-user-btn" class="secondary">
             <i data-lucide="user-plus"></i> Ajouter
           </button>
         </div>
 
-        <hr style="border:none; border-top:1px solid rgba(0,0,0,0.06); margin:14px 0;">
+        <hr style="border:none;
+                   border-top:1px solid rgba(0,0,0,0.06);
+                   margin:14px 0;">
 
         <div class="row">
           <button id="save-coloc-btn" class="primary">
             <i data-lucide="save"></i> Enregistrer
           </button>
+
           <button id="close-editor-btn" class="secondary">
             <i data-lucide="arrow-left"></i> Retour
           </button>
         </div>
       </div>
 
-    </div><!-- /#app -->
+    </div><!-- /app -->
 
-  </div><!-- /.container -->
+  </div><!-- /container -->
 
   <!-- JS -->
   <script src="api.js"></script>
   <script src="index.js"></script>
 
   <script>
-    // Active Lucide
     if (window.lucide) lucide.createIcons();
   </script>
+
 </body>
 </html>
