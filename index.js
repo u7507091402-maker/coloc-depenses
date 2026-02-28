@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Force change password UI
   const forcePasswordCard = document.getElementById("force-password-card");
   const newPasswordInput = document.getElementById("new-password");
+  const newPasswordConfirmInput = document.getElementById("new-password-confirm"); // ✅ doit exister dans HTML
   const changePasswordBtn = document.getElementById("change-password-btn");
 
   // =======================
@@ -54,6 +55,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let tempUsers = [];
   let didInitApp = false;
 
+  let isAdmin = false; // ✅ Option A
+
   // =======================
   // HELPERS
   // =======================
@@ -61,25 +64,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     return err?.message ? err.message : String(err);
   }
 
+  function refreshIcons() {
+    if (window.lucide) lucide.createIcons();
+  }
+
   function showLogin() {
     if (loginCard) loginCard.style.display = "block";
     if (app) app.style.display = "none";
     if (forcePasswordCard) forcePasswordCard.style.display = "none";
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
   }
 
   function showApp() {
     if (loginCard) loginCard.style.display = "none";
     if (forcePasswordCard) forcePasswordCard.style.display = "none";
     if (app) app.style.display = "block";
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
   }
 
   function showForcePassword() {
     if (loginCard) loginCard.style.display = "none";
     if (app) app.style.display = "none";
     if (forcePasswordCard) forcePasswordCard.style.display = "block";
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
   }
 
   // =======================
@@ -90,13 +97,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function loginWithPassword(email, password) {
-    // Supabase v1
     const { error } = await supabaseClient.auth.signIn({ email, password });
     if (error) throw error;
   }
 
   async function updatePassword(newPassword) {
-    // Supabase v1
     const { error } = await supabaseClient.auth.update({ password: newPassword });
     if (error) throw error;
   }
@@ -110,7 +115,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // RPCs (DB)
   // =======================
   async function claimMyInvites() {
-    // crée coloc_members + marque claimed_at
     const { error } = await supabaseClient.rpc("claim_my_invites");
     if (error) throw error;
   }
@@ -120,6 +124,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       p_colocid: Number(colocId),
     });
     if (error) throw error;
+  }
+
+  // =======================
+  // PROFILE / ADMIN CHECK
+  // =======================
+  async function loadMyProfile(userId) {
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("id, is_admin, must_change_password")
+      .eq("id", userId)
+      .single();
+    if (error) throw error;
+    return data;
   }
 
   // =======================
@@ -157,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!colocs.length) {
       colocsList.innerHTML = "<li class='muted'>Aucune colocation</li>";
-      if (window.lucide) lucide.createIcons();
+      refreshIcons();
       return;
     }
 
@@ -170,40 +187,49 @@ document.addEventListener("DOMContentLoaded", async () => {
       nameSpan.textContent = c.name;
       nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
 
-      // edit
-      const editBtn = document.createElement("button");
-      editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
-      editBtn.onclick = (e) => {
-        e.stopPropagation();
-        openEditEditor(c);
-      };
+      // Boutons admin only (Option A)
+      if (isAdmin) {
+        const editBtn = document.createElement("button");
+        editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
+        editBtn.onclick = (e) => {
+          e.stopPropagation();
+          openEditEditor(c);
+        };
 
-      // delete cascade
-      const deleteBtn = document.createElement("button");
-      deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-      deleteBtn.onclick = async (e) => {
-        e.stopPropagation();
-        if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
-        try {
-          await deleteColocCascade(c.id);
-          await loadData();
-        } catch (err) {
-          console.error("delete coloc:", err);
-          alert("Erreur suppression : " + safeMsg(err));
-        }
-      };
+        const deleteBtn = document.createElement("button");
+        deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+        deleteBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
+          try {
+            await deleteColocCascade(c.id);
+            await loadData();
+          } catch (err) {
+            console.error("delete coloc:", err);
+            alert("Erreur suppression : " + safeMsg(err));
+          }
+        };
 
-      li.append(nameSpan, editBtn, deleteBtn);
+        li.append(nameSpan, editBtn, deleteBtn);
+      } else {
+        li.appendChild(nameSpan);
+      }
+
       colocsList.appendChild(li);
     });
 
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
   }
 
   // =======================
   // EDITOR
   // =======================
   function openCreateEditor() {
+    if (!isAdmin) {
+      alert("Seul l’administrateur peut créer une colocation.");
+      return;
+    }
+
     isCreating = true;
     selectedColoc = null;
     tempUsers = [];
@@ -216,6 +242,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function openEditEditor(coloc) {
+    if (!isAdmin) return;
+
     isCreating = false;
     selectedColoc = coloc;
 
@@ -273,6 +301,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function addUser() {
+    if (!isAdmin) return;
+
     const name = (newUserInput?.value || "").trim();
     const email = (newUserEmail?.value || "").trim().toLowerCase();
     const weight = parseFloat(newUserWeight?.value);
@@ -291,9 +321,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // SAVE COLOC + USERS + INVITES
+  // SAVE COLOC + USERS + INVITES (admin only)
   // =======================
   async function saveColoc() {
+    if (!isAdmin) {
+      alert("Seul l’administrateur peut enregistrer une colocation.");
+      return;
+    }
+
     const name = (colocNameInput?.value || "").trim();
     if (!name || !tempUsers.length) return alert("Nom et colocataires obligatoires");
 
@@ -346,7 +381,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { error: uErr } = await supabaseClient.from("users").insert(usersToInsert);
       if (uErr) throw uErr;
 
-      // upsert invites (nécessite unique(colocid,email))
+      // upsert invites (unique(colocid,email) recommandé)
       const invitesToUpsert = normalized.map((u) => ({
         colocid: colocIdToUse,
         email: u.email,
@@ -372,6 +407,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function initAppIfNeeded() {
     if (didInitApp) return;
     didInitApp = true;
+
+    // Option A: cache le bouton créer si pas admin
+    if (createBtn) createBtn.style.display = isAdmin ? "" : "none";
 
     if (createBtn) createBtn.onclick = openCreateEditor;
     if (closeEditorBtn) closeEditorBtn.onclick = closeEditor;
@@ -426,36 +464,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // --- CONNECTÉ ---
-  // 1) réclame les invites => crée coloc_members si besoin
+  // 1) claim invites
   try {
     await claimMyInvites();
   } catch (e) {
     console.warn("claim_my_invites:", e);
   }
 
-  // 2) check profile pour forcer changement mdp
+  // 2) read profile (admin + must_change_password)
   let profile = null;
   try {
-    const { data, error } = await supabaseClient
-      .from("profiles")
-      .select("id, must_change_password")
-      .eq("id", session.user.id)
-      .single();
-
-    if (error) throw error;
-    profile = data;
+    profile = await loadMyProfile(session.user.id);
+    isAdmin = !!profile?.is_admin;
   } catch (e) {
     console.warn("profile read:", e);
   }
 
+  // 3) force change password
   if (profile?.must_change_password) {
     showForcePassword();
 
     if (changePasswordBtn) {
       changePasswordBtn.onclick = async () => {
         const newPass = (newPasswordInput?.value || "").trim();
+        const confirmPass = (newPasswordConfirmInput?.value || "").trim();
+
         if (newPass.length < 6) {
           alert("Mot de passe trop court (min 6)");
+          return;
+        }
+        if (newPass !== confirmPass) {
+          alert("Les deux mots de passe ne correspondent pas.");
           return;
         }
 
@@ -482,11 +521,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   showApp();
   await initAppIfNeeded();
 
-  // re-sync UI si event auth
+  // Re-sync UI
   try {
     supabaseClient.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") showLogin();
-      if (event === "SIGNED_IN") location.reload();
     });
   } catch (e) {
     console.warn("onAuthStateChange:", e);
