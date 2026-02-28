@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const usersList = document.getElementById("users-list");
 
   const newUserInput = document.getElementById("new-user-name");
-  const newUserEmail = document.getElementById("new-user-email"); // ✅ bon endroit (éditeur)
+  const newUserEmail = document.getElementById("new-user-email"); // champ email dans l’éditeur
   const newUserWeight = document.getElementById("new-user-weight");
 
   const createBtn = document.getElementById("create-coloc-btn");
@@ -46,7 +46,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let selectedColoc = null;
   let isCreating = false;
   let tempUsers = [];
-
   let didInitApp = false;
 
   // =======================
@@ -205,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       .filter((u) => Number(u.colocid) === Number(coloc.id))
       .map((u) => ({
         name: u.name,
-        email: (u.email || "").toLowerCase(), // ✅ important
+        email: (u.email || "").trim().toLowerCase(),
         weight: parseFloat(Number(u.weight || 0).toFixed(4)),
       }));
 
@@ -278,8 +277,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const totalWeight = tempUsers.reduce((s, u) => s + Number(u.weight || 0), 0);
     if (Math.abs(totalWeight - 1) > 0.0001) return alert("La somme des poids doit faire 1");
 
-    // ✅ normalise SANS perdre email
-    tempUsers = tempUsers.map((u) => ({
+    // normalise sans perdre email
+    const normalized = tempUsers.map((u) => ({
       name: u.name,
       email: (u.email || "").trim().toLowerCase(),
       weight: parseFloat(Number(u.weight).toFixed(4)),
@@ -307,19 +306,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           .eq("id", colocIdToUse);
         if (upErr) throw upErr;
 
-        // supprime users existants (tu refais une liste propre)
+        // supprime users existants puis réinsère la liste propre
         const { error: delUsersErr } = await supabaseClient
           .from("users")
           .delete()
           .eq("colocid", colocIdToUse);
         if (delUsersErr) throw delUsersErr;
-
-        // (optionnel) si tu veux aussi reset les invites de cette coloc :
-        // await supabaseClient.from("invites").delete().eq("colocid", colocIdToUse);
       }
 
-      // ✅ insert users avec email
-      const usersToInsert = tempUsers.map((u) => ({
+      // insert users avec email
+      const usersToInsert = normalized.map((u) => ({
         name: u.name,
         email: u.email,
         weight: u.weight,
@@ -329,27 +325,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { error: uErr } = await supabaseClient.from("users").insert(usersToInsert);
       if (uErr) throw uErr;
 
-      // ✅ create invites (admin-only via RLS)
-      // Si tu as une contrainte unique (colocid,email), tu peux faire upsert.
-      // Sinon, on insère et on ignore l'erreur "duplicate" si tu en as.
-        // ✅ create invites (sans status)
-        const invitesToUpsert = tempUsers.map(u => ({
-          colocid: colocIdToUse,
-          email: u.email,
-          role: "member",
-          // created_by rempli par DEFAULT auth.uid() côté DB
-        }));
+      // upsert invites (il faut une contrainte unique sur (colocid,email) pour que ça marche)
+      const invitesToUpsert = normalized.map((u) => ({
+        colocid: colocIdToUse,
+        email: u.email,
+        role: "member",
+        // created_by / created_at gérés côté DB si tu as des DEFAULT
+      }));
 
-        const { error: invErr } = await supabaseClient
-          .from("invites")
-          .upsert(invitesToUpsert, { onConflict: "colocid,email" });
+      const { error: invErr } = await supabaseClient
+        .from("invites")
+        .upsert(invitesToUpsert, { onConflict: "colocid,email" });
 
-        if (invErr) throw invErr;
-        // fallback si pas d'onConflict/unique :
-        // const { error: invErr2 } = await supabaseClient.from("invites").insert(invitesToInsert);
-        // if (invErr2) throw invErr2;
-        throw invErr;
-      }
+      // ✅ IMPORTANT : on ne throw QUE si erreur
+      if (invErr) throw invErr;
 
       closeEditor();
       await loadData();
@@ -403,7 +392,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (loginBtn) {
       loginBtn.onclick = async () => {
-        const email = (loginEmail?.value || "").trim();
+        const email = (loginEmail?.value || "").trim().toLowerCase();
         if (!email) return;
 
         if (loginMessage) loginMessage.textContent = "Envoi du lien…";
