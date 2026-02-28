@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Force change password UI
   const forcePasswordCard = document.getElementById("force-password-card");
   const newPasswordInput = document.getElementById("new-password");
-  const newPasswordConfirmInput = document.getElementById("new-password-confirm"); // ✅ doit exister dans HTML
+  const newPasswordConfirmInput = document.getElementById("new-password-confirm"); // doit exister dans HTML
   const changePasswordBtn = document.getElementById("change-password-btn");
 
   // =======================
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let tempUsers = [];
   let didInitApp = false;
 
-  let isAdmin = false; // ✅ Option A
+  let isAdmin = false; // Option A
 
   // =======================
   // HELPERS
@@ -89,11 +89,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     refreshIcons();
   }
 
+  function makeIconBtn(lucideName, title, onClick) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.innerHTML = `<i data-lucide="${lucideName}"></i>`;
+    if (title) {
+      btn.title = title;
+      btn.setAttribute("aria-label", title);
+    }
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      onClick?.(e);
+    };
+    return btn;
+  }
+
   // =======================
   // AUTH (Supabase v1)
   // =======================
   function getSession() {
-    return supabaseClient.auth.session(); // null si pas connecté
+    return supabaseClient.auth.session();
   }
 
   async function loginWithPassword(email, password) {
@@ -165,7 +180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================
-  // RENDER COLOCS
+  // RENDER COLOCS (⚠️ garde la mise en page: bloc actions)
   // =======================
   function renderColocs() {
     if (!colocsList) return;
@@ -186,33 +201,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       nameSpan.className = "coloc-name";
       nameSpan.textContent = c.name;
       nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
+      li.appendChild(nameSpan);
 
-      // Boutons admin only (Option A)
+      // ✅ IMPORTANT : ton CSS attend probablement un container "actions"
+      const actions = document.createElement("div");
+      actions.className = "coloc-actions";
+
       if (isAdmin) {
-        const editBtn = document.createElement("button");
-        editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
-        editBtn.onclick = (e) => {
-          e.stopPropagation();
-          openEditEditor(c);
-        };
+        actions.appendChild(
+          makeIconBtn("edit-3", "Modifier", () => openEditEditor(c))
+        );
 
-        const deleteBtn = document.createElement("button");
-        deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-        deleteBtn.onclick = async (e) => {
-          e.stopPropagation();
-          if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
-          try {
-            await deleteColocCascade(c.id);
-            await loadData();
-          } catch (err) {
-            console.error("delete coloc:", err);
-            alert("Erreur suppression : " + safeMsg(err));
-          }
-        };
+        actions.appendChild(
+          makeIconBtn("trash-2", "Supprimer", async () => {
+            if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
+            try {
+              await deleteColocCascade(c.id);
+              await loadData();
+            } catch (err) {
+              console.error("delete coloc:", err);
+              alert("Erreur suppression : " + safeMsg(err));
+            }
+          })
+        );
 
-        li.append(nameSpan, editBtn, deleteBtn);
-      } else {
-        li.appendChild(nameSpan);
+        li.appendChild(actions);
       }
 
       colocsList.appendChild(li);
@@ -289,6 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       li.textContent = `${u.name} — ${email} (poids: ${Number(u.weight).toFixed(4)})`;
 
       const delBtn = document.createElement("button");
+      delBtn.type = "button";
       delBtn.textContent = "✕";
       delBtn.onclick = () => {
         tempUsers.splice(i, 1);
@@ -408,7 +422,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (didInitApp) return;
     didInitApp = true;
 
-    // Option A: cache le bouton créer si pas admin
+    // cache le bouton créer si pas admin
     if (createBtn) createBtn.style.display = isAdmin ? "" : "none";
 
     if (createBtn) createBtn.onclick = openCreateEditor;
