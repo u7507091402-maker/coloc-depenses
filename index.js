@@ -182,38 +182,52 @@ document.addEventListener("DOMContentLoaded", async () => {
   // =======================
   // RENDER COLOCS (⚠️ garde la mise en page: bloc actions)
   // =======================
-  function renderColocs() {
-    if (!colocsList) return;
+    function renderColocs() {
+      if (!colocsList) return;
 
-    colocsList.innerHTML = "";
+      colocsList.innerHTML = "";
 
-    if (!colocs.length) {
-      colocsList.innerHTML = "<li class='muted'>Aucune colocation</li>";
-      refreshIcons();
-      return;
-    }
+      if (!colocs.length) {
+        colocsList.innerHTML = "<li class='muted'>Aucune colocation</li>";
+        refreshIcons();
+        return;
+      }
 
-    colocs.forEach((c) => {
-      const li = document.createElement("li");
-      li.className = "coloc-item";
+      colocs.forEach((c) => {
+        const li = document.createElement("li");
+        li.className = "coloc-item";
 
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "coloc-name";
-      nameSpan.textContent = c.name;
-      nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
-      li.appendChild(nameSpan);
+        // ✅ bloc gauche (nom)
+        const left = document.createElement("div");
+        left.className = "coloc-left";
 
-      // ✅ IMPORTANT : ton CSS attend probablement un container "actions"
-      const actions = document.createElement("div");
-      actions.className = "coloc-actions";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "coloc-name";
+        nameSpan.textContent = c.name;
+        nameSpan.onclick = () => (location.href = `coloc.html?id=${c.id}`);
 
-      if (isAdmin) {
-        actions.appendChild(
-          makeIconBtn("edit-3", "Modifier", () => openEditEditor(c))
-        );
+        left.appendChild(nameSpan);
 
-        actions.appendChild(
-          makeIconBtn("trash-2", "Supprimer", async () => {
+        // ✅ bloc droite (actions) — structure stable pour ton CSS
+        const right = document.createElement("div");
+        right.className = "coloc-actions";
+
+        if (isAdmin) {
+          const editBtn = document.createElement("button");
+          editBtn.className = "icon-btn"; // si ton CSS a déjà un style bouton icône
+          editBtn.type = "button";
+          editBtn.innerHTML = '<i data-lucide="edit-3"></i>';
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
+            openEditEditor(c);
+          };
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "icon-btn";
+          deleteBtn.type = "button";
+          deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+          deleteBtn.onclick = async (e) => {
+            e.stopPropagation();
             if (!confirm(`Supprimer "${c.name}" + toutes ses données ?`)) return;
             try {
               await deleteColocCascade(c.id);
@@ -222,18 +236,20 @@ document.addEventListener("DOMContentLoaded", async () => {
               console.error("delete coloc:", err);
               alert("Erreur suppression : " + safeMsg(err));
             }
-          })
-        );
+          };
 
-        li.appendChild(actions);
-      }
+          right.append(editBtn, deleteBtn);
+        } else {
+          // même si pas admin, on garde le conteneur pour préserver le layout
+          right.innerHTML = "";
+        }
 
-      colocsList.appendChild(li);
-    });
+        li.append(left, right);
+        colocsList.appendChild(li);
+      });
 
-    refreshIcons();
-  }
-
+      refreshIcons();
+    }
   // =======================
   // EDITOR
   // =======================
